@@ -2,17 +2,15 @@
  * Versi aplikasi SBAGIAMU POS
  * Update nilai ini setiap kali rilis versi baru
  */
-export const APP_VERSION = '1.0.38';
+export const APP_VERSION = '1.0.39';
 
 /**
  * Catatan rilis untuk versi ini (Changelog)
  * Update daftar ini sebelum menjalankan "npm run release"
  */
 export const RELEASE_CHANGELOG = [
-  "penambahan input email pos",
-  "penambahan input cetak whatsapp nota",
-  "penambahan filter dll",
-  "perbaikan fitur pelanggan"
+  "perbaikan splash screen",
+  "fungsikan realtime riwayat transaksi"
 ];
 
 /**

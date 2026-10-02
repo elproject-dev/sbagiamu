@@ -170,10 +170,9 @@ export const useGetDashboardStats = (params?: any) => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'transactions',
-          filter: 'status=eq.completed'
+          table: 'transactions'
         },
         () => {
           // Refresh stats when new transaction is added
@@ -308,10 +307,9 @@ export const useGetTopProducts = (params?: any) => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'transactions',
-          filter: 'status=eq.completed'
+          table: 'transactions'
         },
         () => {
           fetchTopProducts();
@@ -410,10 +408,9 @@ export const useGetRecentTransactions = (params?: any) => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'transactions',
-          filter: 'status=eq.completed'
+          table: 'transactions'
         },
         () => {
           // Refresh recent transactions when new one is added
@@ -528,10 +525,9 @@ export const useGetRevenueChart = (params?: any) => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'transactions',
-          filter: 'status=eq.completed'
+          table: 'transactions'
         },
         () => {
           // Refresh revenue chart when new transaction is added
@@ -972,7 +968,7 @@ export const useAdvancedAnalytics = (params?: any) => {
   useEffect(() => {
     const channel = supabase
       .channel('advanced_analytics_realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions', filter: 'status=eq.completed' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
         fetchAnalytics();
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -993,10 +989,9 @@ export const useListTransactions = (params?: any) => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'transactions',
-          filter: 'status=eq.completed'
+          table: 'transactions'
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -1157,6 +1152,7 @@ export const getGetTransactionQueryKey = (id: number) => ['transaction', id];
 
 export const useDeleteTransaction = () => {
   const [isPending, setIsPending] = useState(false);
+  const queryClient = useQueryClient();
 
   return {
     mutate: async (params: { id: number }, options?: any) => {
@@ -1173,6 +1169,10 @@ export const useDeleteTransaction = () => {
         );
 
         if (error) throw error;
+        
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['transaction', params.id] });
+
         if (options?.onSuccess) options.onSuccess();
       } catch (err) {
         if (options?.onError) options.onError(err);

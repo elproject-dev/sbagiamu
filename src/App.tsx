@@ -182,10 +182,14 @@ function AppRoutes() {
 function App() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    return !sessionStorage.getItem('hasShownSplash');
+  });
   const [isClosingSplash, setIsClosingSplash] = useState(false);
 
   useEffect(() => {
+    if (!showSplash) return;
+
     // Start fade out animation after 2.2 seconds
     const closeTimer = setTimeout(() => {
       setIsClosingSplash(true);
@@ -194,12 +198,13 @@ function App() {
     // Hide splash screen completely after 2.8 seconds
     const splashTimer = setTimeout(() => {
       setShowSplash(false);
+      sessionStorage.setItem('hasShownSplash', 'true');
     }, 2800);
     return () => {
       clearTimeout(closeTimer);
       clearTimeout(splashTimer);
     };
-  }, []);
+  }, [showSplash]);
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {

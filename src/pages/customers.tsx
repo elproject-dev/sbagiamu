@@ -5,7 +5,7 @@ import { formatRupiah } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, Phone, Award, Users, Download, Store, AlertTriangle } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Phone, Award, Users, Download, Store, AlertTriangle, Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +14,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ADMIN_EMAIL } from "@/lib/auth";
 import { exportToExcel } from "@/components/excel-export/excel-export";
 import { useListOutlets } from "@/mocks/api-client-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export default function CustomersPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [sortBy, setSortBy] = useState("newest");
   const [lookupPhone, setLookupPhone] = useState("");
   const [lookupResult, setLookupResult] = useState<any>(null);
@@ -46,17 +53,17 @@ export default function CustomersPage() {
   const handleOpenDialog = (customer?: any) => {
     if (customer) {
       setEditingCustomer(customer);
-      setFormData({ 
-        name: customer.name, 
-        phone: customer.phone || "", 
+      setFormData({
+        name: customer.name,
+        phone: customer.phone || "",
         email: customer.email || "",
         membershipType: getMembershipStatus(customer)
       });
     } else {
       setEditingCustomer(null);
-      setFormData({ 
-        name: "", 
-        phone: "", 
+      setFormData({
+        name: "",
+        phone: "",
         email: "",
         membershipType: "member"
       });
@@ -138,7 +145,7 @@ export default function CustomersPage() {
     const data = customers.map((c: any, index: number) => {
       const date = new Date(c.created_at);
       const formattedDate = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-      
+
       return {
         "No": index + 1,
         "Nama Pelanggan": c.name || "-",
@@ -168,11 +175,23 @@ export default function CustomersPage() {
   };
 
   const filteredCustomers = customers?.filter((customer: any) => {
+    if (isAdmin && (startDate || endDate)) {
+      const customerDate = customer.created_at ? new Date(customer.created_at).getTime() : 0;
+      if (startDate) {
+        const start = new Date(startDate).setHours(0, 0, 0, 0);
+        if (customerDate < start) return false;
+      }
+      if (endDate) {
+        const end = new Date(endDate).setHours(23, 59, 59, 999);
+        if (customerDate > end) return false;
+      }
+    }
+
     if (!search || search.length < 3) return true;
     const s = search.toLowerCase();
-    return customer.name?.toLowerCase().includes(s) || 
-           (customer.phone || "").toLowerCase().includes(s) || 
-           (customer.email || "").toLowerCase().includes(s);
+    return customer.name?.toLowerCase().includes(s) ||
+      (customer.phone || "").toLowerCase().includes(s) ||
+      (customer.email || "").toLowerCase().includes(s);
   })?.sort((a: any, b: any) => {
     if (sortBy === "highest_spent") return (b.total_spent || 0) - (a.total_spent || 0);
     if (sortBy === "highest_transactions") return (b.transactions?.[0]?.count || 0) - (a.transactions?.[0]?.count || 0);
@@ -187,8 +206,8 @@ export default function CustomersPage() {
     return (
       <Sidebar>
         <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 p-6 h-full min-h-[calc(100vh-4rem)]">
-          <div className="max-w-md w-full p-8 text-center flex flex-col items-center bg-white dark:bg-slate-800 shadow-lg border border-red-200 dark:border-red-900/50 rounded-2xl">
-            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-red-200/50 dark:border-red-800/50">
+          <div className="max-w-md w-full p-8 text-center flex flex-col items-center bg-white dark:bg-slate-800 shadow-lg border border-red-200 dark:border-red-900/50 rounded-none">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/50 rounded-none flex items-center justify-center mb-6 shadow-inner border border-red-200/50 dark:border-red-800/50">
               <AlertTriangle className="w-10 h-10 text-red-600 dark:text-red-500" />
             </div>
             <h2 className="text-2xl font-bold text-red-900 dark:text-red-100 mb-3">Akses Ditolak</h2>
@@ -229,6 +248,50 @@ export default function CustomersPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-4 h-4" />
               <Input placeholder="Cari pelanggan..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
+
+            {isAdmin && (
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <div className="relative w-full sm:w-[150px] h-9">
+                  <Input
+                    type="text"
+                    placeholder="Tanggal Mulai"
+                    value={startDate ? startDate.split('-').reverse().join('-') : ""}
+                    readOnly
+                    className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer border-slate-200 dark:border-slate-700"
+                  />
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e: any) => setStartDate(e.target.value)}
+                    onClick={(e: any) => {
+                      try { e.target.showPicker?.(); } catch (err) { }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    title="Tanggal Mulai"
+                  />
+                </div>
+                <div className="relative w-full sm:w-[150px] h-9">
+                  <Input
+                    type="text"
+                    placeholder="Tanggal Akhir"
+                    value={endDate ? endDate.split('-').reverse().join('-') : ""}
+                    readOnly
+                    className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer border-slate-200 dark:border-slate-700"
+                  />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e: any) => setEndDate(e.target.value)}
+                    onClick={(e: any) => {
+                      try { e.target.showPicker?.(); } catch (err) { }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    title="Tanggal Akhir"
+                  />
+                </div>
+              </div>
+            )}
+
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Urutkan" />
@@ -252,9 +315,9 @@ export default function CustomersPage() {
               filteredCustomers?.map((customer: any) => {
                 const status = getMembershipStatus(customer);
                 return (
-                  <div 
-                    key={customer.id} 
-                    className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 space-y-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200"
+                  <div
+                    key={customer.id}
+                    className="bg-white dark:bg-slate-900 rounded-none border border-slate-200 dark:border-slate-800 shadow-sm p-4 space-y-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200"
                     onClick={() => setSelectedCustomerDetail(customer)}
                   >
                     <div className="flex items-start justify-between">
@@ -306,7 +369,7 @@ export default function CustomersPage() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-none shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-800/50">
@@ -330,8 +393,8 @@ export default function CustomersPage() {
                   filteredCustomers?.map((customer: any) => {
                     const status = getMembershipStatus(customer);
                     return (
-                      <TableRow 
-                        key={customer.id} 
+                      <TableRow
+                        key={customer.id}
                         className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm relative hover:z-10 transition-all duration-200 cursor-pointer"
                         onClick={() => setSelectedCustomerDetail(customer)}
                       >
@@ -409,7 +472,7 @@ export default function CustomersPage() {
                 </p>
               )}
             </div>
-            
+
           </div>
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
@@ -433,7 +496,7 @@ export default function CustomersPage() {
               <Button onClick={handleLookup} disabled={isLookupPending}><Search className="w-4 h-4 mr-2" /> Cari</Button>
             </div>
             {lookupResult && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-slate-50 dark:from-amber-950/50 dark:to-slate-900 border border-amber-200 dark:border-amber-800/50 rounded-lg space-y-2">
+              <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-slate-50 dark:from-amber-950/50 dark:to-slate-900 border border-amber-200 dark:border-amber-800/50 rounded-none space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="font-bold text-lg text-slate-900 dark:text-white">{lookupResult.name}</div>
@@ -463,7 +526,7 @@ export default function CustomersPage() {
 
       {/* Detail Customer Dialog */}
       <Dialog open={!!selectedCustomerDetail} onOpenChange={(open) => !open && setSelectedCustomerDetail(null)}>
-        <DialogContent className="sm:max-w-md sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="sm:max-w-md sm:rounded-none max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" />
@@ -476,12 +539,12 @@ export default function CustomersPage() {
 
           {selectedCustomerDetail && (
             <div className="space-y-4 py-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-none border border-slate-100 dark:border-slate-800 space-y-4">
                 <div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Nama Lengkap</p>
                   <p className="font-semibold text-slate-900 dark:text-white text-lg">{selectedCustomerDetail.name}</p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Telepon</p>

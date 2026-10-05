@@ -282,9 +282,9 @@ export default function DiscountSettingsPage() {
                 const isGlobal = config.outletId === 'all' && config.staffEmail === 'all';
 
                 return (
-                  <div 
-                    key={config.id} 
-                    className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200"
+                  <div
+                    key={config.id}
+                    className="bg-white dark:bg-slate-900 rounded-none border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200"
                     onClick={() => { setDetailConfig(config); setIsDetailDialogOpen(true); }}
                   >
                     <div className="p-4 flex flex-col gap-3">
@@ -357,7 +357,7 @@ export default function DiscountSettingsPage() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-none shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -386,8 +386,8 @@ export default function DiscountSettingsPage() {
                       const isGlobal = config.outletId === 'all' && config.staffEmail === 'all';
 
                       return (
-                        <TableRow 
-                          key={config.id} 
+                        <TableRow
+                          key={config.id}
                           className="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm relative hover:z-10 transition-all duration-200 cursor-pointer"
                           onClick={() => { setDetailConfig(config); setIsDetailDialogOpen(true); }}
                         >
@@ -458,10 +458,10 @@ export default function DiscountSettingsPage() {
             {/* Target Setup */}
             <div className="space-y-3">
               <label className="text-sm font-medium">Outlet Target</label>
-              <div className="flex flex-col gap-3 max-h-[200px] overflow-y-auto p-3 border border-slate-200 dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
+              <div className="flex flex-col gap-3 max-h-[200px] overflow-y-auto p-3 border border-slate-200 dark:border-slate-800 rounded-none bg-white dark:bg-slate-900">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="outlet-all" 
+                  <Checkbox
+                    id="outlet-all"
                     checked={formOutlets.includes("all")}
                     disabled={editingId === 'default_global'}
                     onCheckedChange={(checked) => {
@@ -476,8 +476,8 @@ export default function DiscountSettingsPage() {
                 </div>
                 {outlets?.map((outlet: any) => (
                   <div key={outlet.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`outlet-${outlet.id}`} 
+                    <Checkbox
+                      id={`outlet-${outlet.id}`}
                       checked={formOutlets.includes(outlet.id.toString())}
                       disabled={editingId === 'default_global'}
                       onCheckedChange={(checked) => {
@@ -545,7 +545,7 @@ export default function DiscountSettingsPage() {
                 <div className="space-y-3 pt-2">
                   <label className="text-sm font-medium">Kategori Promo yang Diizinkan</label>
 
-                  <div className="grid gap-2 border rounded-md p-3 max-h-[150px] overflow-y-auto scrollbar-hide">
+                  <div className="grid gap-2 border rounded-none p-3 max-h-[150px] overflow-y-auto scrollbar-hide">
                     {globalDiscountNotesData?.map((cat) => (
                       <div key={cat.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -631,7 +631,7 @@ export default function DiscountSettingsPage() {
                   <p className="text-center text-slate-400 text-sm py-4">Belum ada kategori diskon</p>
                 ) : (
                   globalDiscountNotesData.map((noteObj: any) => (
-                    <div key={noteObj.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2 px-3 rounded-md border border-slate-100 dark:border-slate-800">
+                    <div key={noteObj.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2 px-3 rounded-none border border-slate-100 dark:border-slate-800">
                       <span className="text-sm font-medium">{noteObj.note}</span>
                       <Button
                         variant="ghost"
@@ -656,7 +656,7 @@ export default function DiscountSettingsPage() {
       </Dialog>
       {/* Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="sm:max-w-sm sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="sm:max-w-sm sm:rounded-none max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader>
             <DialogTitle>Detail Pengaturan Diskon</DialogTitle>
           </DialogHeader>

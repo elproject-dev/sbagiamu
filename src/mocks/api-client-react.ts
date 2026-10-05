@@ -1110,6 +1110,7 @@ export const useListTransactions = (params?: any) => {
     totalCount: query.data?.totalCount || 0, 
     totalAmount: query.data?.totalAmount || 0,
     isLoading: query.isLoading, 
+    isFetching: query.isFetching,
     error: query.error, 
     refetch: query.refetch 
   };

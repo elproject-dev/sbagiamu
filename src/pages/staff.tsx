@@ -320,7 +320,7 @@ export default function StaffPage() {
 
         <div className="p-5 flex-1 overflow-auto">
           {/* Filters */}
-          <div className="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 mb-5">
+          <div className="rounded-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 mb-5">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <div className="relative">
@@ -355,7 +355,7 @@ export default function StaffPage() {
           </div>
 
           {/* Table (Desktop) */}
-          <div className="hidden md:block rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="hidden md:block rounded-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="p-4 border-b border-slate-100 dark:border-slate-700">
               <h3 className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
                 Daftar Staff Terdaftar
@@ -485,16 +485,16 @@ export default function StaffPage() {
           {/* Mobile Card List (Smartphone) */}
           <div className="md:hidden space-y-3 mt-4">
             {isLoading ? (
-              <div className="text-center py-8 text-slate-500 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="text-center py-8 text-slate-500 bg-white dark:bg-slate-800 rounded-none border border-slate-200 dark:border-slate-700">
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-8 h-8 border-4 border-slate-200 border-t-primary rounded-full animate-spin" />
                   <p className="text-sm">Memuat data staff...</p>
                 </div>
               </div>
             ) : filteredStaff.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="text-center py-8 text-slate-500 bg-white dark:bg-slate-800 rounded-none border border-slate-200 dark:border-slate-700">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-none flex items-center justify-center">
                     <Users className="w-6 h-6 text-slate-400" />
                   </div>
                   <p className="font-medium text-slate-700 dark:text-slate-300">Belum ada data staff</p>
@@ -504,7 +504,7 @@ export default function StaffPage() {
               filteredStaff.map((staff) => (
                 <div
                   key={staff.id}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col gap-3 shadow-sm relative hover:shadow transition-all"
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none p-4 flex flex-col gap-3 shadow-sm relative hover:shadow transition-all"
                   onClick={() => setSelectedStaffDetail(staff)}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -578,7 +578,7 @@ export default function StaffPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col sm:rounded-2xl">
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary/10 rounded-none flex items-center justify-center">
                 <Store className="w-5 h-5 text-primary" />
               </div>
               Manajemen Outlet
@@ -587,7 +587,7 @@ export default function StaffPage() {
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto scrollbar-hide pr-2 pb-4 space-y-6">
-            <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+            <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-none border border-slate-100 dark:border-slate-700">
               <h3 className="font-semibold text-slate-900 dark:text-white">
                 {editingOutletId ? "Edit Outlet" : "Tambah Outlet Baru"}
               </h3>
@@ -691,7 +691,7 @@ export default function StaffPage() {
             <div className="space-y-3">
               <h3 className="font-semibold text-slate-900 dark:text-white">Daftar Outlet</h3>
               {outlets?.length === 0 ? (
-                <div className="text-center py-6 text-slate-500 text-sm border rounded-xl bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="text-center py-6 text-slate-500 text-sm border rounded-none bg-slate-50/50 dark:bg-slate-800/30">
                   Belum ada outlet terdaftar
                 </div>
               ) : (
@@ -750,7 +750,7 @@ export default function StaffPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary/10 rounded-none flex items-center justify-center">
                 <Users className="w-5 h-5 text-primary" />
               </div>
               {editingStaff ? "Edit Staff" : "Tambah Staff Baru"}
@@ -884,7 +884,7 @@ export default function StaffPage() {
 
           {selectedStaffDetail && (
             <div className="space-y-4 py-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-none border border-slate-100 dark:border-slate-800 space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Nama Lengkap</p>

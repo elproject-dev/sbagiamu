@@ -360,7 +360,7 @@ export default function DashboardPage() {
                   <span className="hidden sm:inline font-medium">Filter</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-[340px] max-w-[95vw] sm:w-[400px] p-4 sm:rounded-2xl shadow-xl">
+              <PopoverContent align="end" className="w-[340px] max-w-[95vw] sm:w-[400px] p-4 sm:rounded-none shadow-xl">
                 <div className="flex items-center gap-2 font-semibold text-base mb-4 border-b pb-2">
                   <CalendarRange className="w-5 h-5 text-primary" />
                   Filter Dashboard
@@ -377,7 +377,7 @@ export default function DashboardPage() {
                           placeholder="Tanggal Mulai"
                           value={tempStartDate ? tempStartDate.split('-').reverse().join('-') : ""}
                           readOnly
-                          className="absolute inset-0 h-9 w-full rounded-md text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                          className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
                         />
                         <input
                           type="date"
@@ -397,7 +397,7 @@ export default function DashboardPage() {
                           placeholder="Tanggal Akhir"
                           value={tempEndDate ? tempEndDate.split('-').reverse().join('-') : ""}
                           readOnly
-                          className="absolute inset-0 h-9 w-full rounded-md text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                          className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
                         />
                         <input
                           type="date"
@@ -420,7 +420,7 @@ export default function DashboardPage() {
                       <div className="space-y-2">
                         <Label className="text-xs font-medium text-slate-500">Filter Outlet</Label>
                         <Select value={tempOutletFilter} onValueChange={setTempOutletFilter}>
-                          <SelectTrigger className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
+                          <SelectTrigger className="h-9 w-full rounded-none border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
                             <Building2 className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
                             <SelectValue placeholder="Semua Outlet" />
                           </SelectTrigger>
@@ -439,7 +439,7 @@ export default function DashboardPage() {
                       <div className="space-y-2">
                         <Label className="text-xs font-medium text-slate-500">Filter Kasir</Label>
                         <Select value={tempCashierFilter} onValueChange={setTempCashierFilter}>
-                          <SelectTrigger className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
+                          <SelectTrigger className="h-9 w-full rounded-none border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
                             <UserCircle className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
                             <SelectValue placeholder="Semua Kasir" />
                           </SelectTrigger>
@@ -460,7 +460,7 @@ export default function DashboardPage() {
                   <div className="space-y-2">
                     <Label className="text-xs font-medium text-slate-500">Metode Pembayaran</Label>
                     <Select value={tempPaymentMethodFilter} onValueChange={setTempPaymentMethodFilter}>
-                      <SelectTrigger className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
+                      <SelectTrigger className="h-9 w-full rounded-none border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
                         <CreditCard className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
                         <SelectValue placeholder="Semua Pembayaran" />
                       </SelectTrigger>
@@ -517,7 +517,7 @@ export default function DashboardPage() {
                     {formatRupiah(revenueToday.value)}
                   </p>
                 </div>
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-none bg-white/20 flex items-center justify-center shrink-0">
                   <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
               </div>
@@ -535,7 +535,7 @@ export default function DashboardPage() {
                     {transactionsToday.value}
                   </p>
                 </div>
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-none bg-white/20 flex items-center justify-center shrink-0">
                   <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
               </div>
@@ -553,7 +553,7 @@ export default function DashboardPage() {
                     {totalCustomers.value}
                   </p>
                 </div>
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-none bg-white/20 flex items-center justify-center shrink-0">
                   <Users className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
               </div>
@@ -571,7 +571,7 @@ export default function DashboardPage() {
                     {formatRupiah(revenueMonth.value)}
                   </p>
                 </div>
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-none bg-white/20 flex items-center justify-center shrink-0">
                   <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
               </div>
@@ -626,7 +626,7 @@ export default function DashboardPage() {
                           const data = payload[0].payload;
                           const date = new Date(label);
                           return (
-                            <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white p-3 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 min-w-[120px] z-50">
+                            <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white p-3 rounded-none shadow-xl border border-slate-200 dark:border-slate-700 min-w-[120px] z-50">
                               <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                                 {date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
                               </p>
@@ -691,9 +691,9 @@ export default function DashboardPage() {
                       const percentage = Math.max((product.totalSold / maxSold) * 100, 2);
 
                       return (
-                        <div key={product.productId ?? i} className="flex flex-col gap-2 p-2 sm:p-3 rounded-xl bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
+                        <div key={product.productId ?? i} className="flex flex-col gap-2 p-2 sm:p-3 rounded-none bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
                           <div className="flex items-center gap-3 w-full">
-                            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-50 dark:border-slate-800">
+                            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-none bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-50 dark:border-slate-800">
                               {productImage ? (
                                 <img src={productImage} className="w-full h-full object-cover" alt={product.productName} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                               ) : null}
@@ -764,7 +764,7 @@ export default function DashboardPage() {
                         <div
                           key={trx.id || i}
                           onClick={() => trx.id && setLocation(`/transactions/${trx.id}`)}
-                          className="flex flex-col gap-2 p-2 sm:p-3 rounded-xl bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200 cursor-pointer"
+                          className="flex flex-col gap-2 p-2 sm:p-3 rounded-none bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200 cursor-pointer"
                         >
                           <div className="flex items-center gap-3 w-full">
                             {/* Customer Image */}
@@ -861,7 +861,7 @@ export default function DashboardPage() {
                           placeholder="Tanggal Mulai"
                           value={productAnalysisStartDate ? productAnalysisStartDate.split('-').reverse().join('-') : ""}
                           readOnly
-                          className="absolute inset-0 h-9 w-full rounded-md text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                          className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
                         />
                         <input
                           type="date"
@@ -881,7 +881,7 @@ export default function DashboardPage() {
                           placeholder="Tanggal Akhir"
                           value={productAnalysisEndDate ? productAnalysisEndDate.split('-').reverse().join('-') : ""}
                           readOnly
-                          className="absolute inset-0 h-9 w-full rounded-md text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                          className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
                         />
                         <input
                           type="date"
@@ -911,7 +911,7 @@ export default function DashboardPage() {
                       />
                     </div>
                     {isSearchFocused && productAnalysisSearch.length >= 3 && filteredProductSuggestions.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none shadow-lg max-h-60 overflow-auto">
                         {filteredProductSuggestions.map((product, idx) => (
                           <div
                             key={idx}
@@ -934,9 +934,9 @@ export default function DashboardPage() {
 
                 <div className="w-full sm:w-1/2">
                   {productAnalysisSearch ? (
-                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-none p-4 border border-slate-100 dark:border-slate-700">
                       <div className="flex items-center gap-3 mb-3 pb-3 border-b border-slate-200 dark:border-slate-700">
-                        <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-none bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
                           {productAnalysisResult?.imageUrl ? (
                             <img
                               src={getProductImage(productAnalysisResult.imageUrl) || ""}
@@ -966,7 +966,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-full min-h-[100px] flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                    <div className="h-full min-h-[100px] flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-none border border-dashed border-slate-200 dark:border-slate-700">
                       <p className="text-xs sm:text-sm text-slate-400 text-center px-4">Ketik nama produk untuk melihat analisa penjualan di rentang tanggal ini.</p>
                     </div>
                   )}
@@ -1004,7 +1004,7 @@ export default function DashboardPage() {
                             <span className="hidden sm:inline text-xs font-medium">Filter</span>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="end" className="w-[260px] p-4 sm:rounded-2xl shadow-xl">
+                        <PopoverContent align="end" className="w-[260px] p-4 sm:rounded-none shadow-xl">
                           <div className="flex items-center gap-2 font-semibold text-sm mb-3 border-b pb-2">
                             <SlidersHorizontal className="w-4 h-4 text-primary" />
                             Filter Grafik
@@ -1065,9 +1065,9 @@ export default function DashboardPage() {
                           const percentage = Math.max((prod.qty / maxQty) * 100, 2);
 
                           return (
-                            <div key={prod.id} className="flex flex-col gap-2 p-2 sm:p-3 rounded-xl bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
+                            <div key={prod.id} className="flex flex-col gap-2 p-2 sm:p-3 rounded-none bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
                               <div className="flex items-center gap-3 w-full">
-                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-50 dark:border-slate-800">
+                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-none bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-50 dark:border-slate-800">
                                   {productImage ? (
                                     <img src={productImage} className="w-full h-full object-cover" alt={prod.name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                   ) : null}
@@ -1128,7 +1128,7 @@ export default function DashboardPage() {
                           <span className="hidden sm:inline text-xs font-medium">Filter</span>
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent align="end" className="w-[260px] p-4 sm:rounded-2xl shadow-xl">
+                      <PopoverContent align="end" className="w-[260px] p-4 sm:rounded-none shadow-xl">
                         <div className="flex items-center gap-2 font-semibold text-sm mb-3 border-b pb-2">
                           <SlidersHorizontal className="w-4 h-4 text-primary" />
                           Filter Grafik
@@ -1189,9 +1189,9 @@ export default function DashboardPage() {
                         const percentage = Math.max((prod.qty / maxQty) * 100, 2);
 
                         return (
-                          <div key={prod.id} className="flex flex-col gap-2 p-2 sm:p-3 rounded-xl bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
+                          <div key={prod.id} className="flex flex-col gap-2 p-2 sm:p-3 rounded-none bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
                             <div className="flex items-center gap-3 w-full">
-                              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-50 dark:border-slate-800">
+                              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-none bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-50 dark:border-slate-800">
                                 {productImage ? (
                                   <img src={productImage} className="w-full h-full object-cover" alt={prod.name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                 ) : null}
@@ -1246,7 +1246,7 @@ export default function DashboardPage() {
                             <span className="hidden sm:inline-block text-xs font-medium">Filter</span>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="end" className="w-[280px] p-4 sm:rounded-2xl shadow-xl border-slate-100 dark:border-slate-800">
+                        <PopoverContent align="end" className="w-[280px] p-4 sm:rounded-none shadow-xl border-slate-100 dark:border-slate-800">
                           <div className="flex items-center gap-2 font-semibold text-sm mb-3 border-b pb-2">
                             <SlidersHorizontal className="w-4 h-4 text-primary" />
                             Filter Pelanggan
@@ -1290,10 +1290,10 @@ export default function DashboardPage() {
                           const percentage = Math.max((customer.total_spent / maxSpent) * 100, 2);
 
                           return (
-                            <div key={customer.id || idx} className="flex flex-col gap-2 p-2 sm:p-3 rounded-xl bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
+                            <div key={customer.id || idx} className="flex flex-col gap-2 p-2 sm:p-3 rounded-none bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
                               <div className="flex items-center gap-3 w-full">
                                 {/* Customer Image */}
-                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-primary flex items-center justify-center overflow-hidden shrink-0">
+                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-none bg-primary flex items-center justify-center overflow-hidden shrink-0">
                                   <span className="text-lg sm:text-xl font-medium text-primary-foreground">
                                     {customer.name?.charAt(0).toUpperCase()}
                                   </span>
@@ -1350,7 +1350,7 @@ export default function DashboardPage() {
                             <span className="hidden sm:inline-block text-xs font-medium">Filter</span>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="end" className="w-[280px] p-4 sm:rounded-2xl shadow-xl border-slate-100 dark:border-slate-800">
+                        <PopoverContent align="end" className="w-[280px] p-4 sm:rounded-none shadow-xl border-slate-100 dark:border-slate-800">
                           <div className="flex items-center gap-2 font-semibold text-sm mb-3 border-b pb-2">
                             <SlidersHorizontal className="w-4 h-4 text-primary" />
                             Filter Peringkat
@@ -1398,10 +1398,10 @@ export default function DashboardPage() {
                           const percentage = Math.max((outlet.revenue / maxRevenue) * 100, 2);
 
                           return (
-                            <div key={outlet.id} className="flex flex-col gap-2 p-2 sm:p-3 rounded-xl bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
+                            <div key={outlet.id} className="flex flex-col gap-2 p-2 sm:p-3 rounded-none bg-white dark:bg-slate-800 border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-100 dark:hover:border-slate-800 transition-all duration-200">
                               <div className="flex items-center gap-3 w-full">
                                 {/* Outlet Badge */}
-                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-primary flex items-center justify-center overflow-hidden shrink-0">
+                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-none bg-primary flex items-center justify-center overflow-hidden shrink-0">
                                   <span className="text-lg sm:text-xl font-bold text-primary-foreground">
                                     {idx + 1}
                                   </span>
@@ -1468,7 +1468,7 @@ export default function DashboardPage() {
                               <span className="hidden sm:inline text-xs font-medium">Filter</span>
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent align="end" className="w-[260px] p-4 sm:rounded-2xl shadow-xl">
+                          <PopoverContent align="end" className="w-[260px] p-4 sm:rounded-none shadow-xl">
                             <div className="flex items-center gap-2 font-semibold text-sm mb-3 border-b pb-2">
                               <SlidersHorizontal className="w-4 h-4 text-primary" />
                               Filter Grafik
@@ -1552,7 +1552,7 @@ export default function DashboardPage() {
                                   if (active && payload && payload.length) {
                                     const data = payload[0].payload;
                                     return (
-                                      <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white p-3 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 min-w-[120px] z-50">
+                                      <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white p-3 rounded-none shadow-xl border border-slate-200 dark:border-slate-800 min-w-[120px] z-50">
                                         <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 font-medium">
                                           Jam {label}
                                         </p>
@@ -1596,7 +1596,7 @@ export default function DashboardPage() {
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/10 flex items-center justify-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-none bg-white/10 flex items-center justify-center">
                     <FileDown className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                   </div>
                   <div>

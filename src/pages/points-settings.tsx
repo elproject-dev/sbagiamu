@@ -256,7 +256,7 @@ export default function PointsSettingsPage() {
                 return (
                   <div
                     key={config.id}
-                    className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200"
+                    className="bg-white dark:bg-slate-900 rounded-none border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200"
                     onClick={() => setSelectedPointDetail(config)}
                   >
                     <div className="p-4 flex flex-col gap-3">
@@ -312,7 +312,7 @@ export default function PointsSettingsPage() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-none shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -382,7 +382,7 @@ export default function PointsSettingsPage() {
 
       {/* Add / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="sm:max-w-md sm:rounded-none max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit Pengaturan Poin" : "Tambah Pengaturan Poin"}</DialogTitle>
           </DialogHeader>
@@ -391,10 +391,10 @@ export default function PointsSettingsPage() {
             {/* Target Setup */}
             <div className="space-y-3">
               <label className="text-sm font-medium">Outlet Target</label>
-              <div className="flex flex-col gap-3 max-h-[200px] overflow-y-auto p-3 border border-slate-200 dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
+              <div className="flex flex-col gap-3 max-h-[200px] overflow-y-auto p-3 border border-slate-200 dark:border-slate-800 rounded-none bg-white dark:bg-slate-900">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="outlet-all" 
+                  <Checkbox
+                    id="outlet-all"
                     checked={formOutlets.includes("all")}
                     onCheckedChange={(checked) => {
                       if (checked) {
@@ -408,8 +408,8 @@ export default function PointsSettingsPage() {
                 </div>
                 {outlets?.map((outlet: any) => (
                   <div key={outlet.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`outlet-${outlet.id}`} 
+                    <Checkbox
+                      id={`outlet-${outlet.id}`}
                       checked={formOutlets.includes(outlet.id.toString())}
                       onCheckedChange={(checked) => {
                         if (checked) {
@@ -527,7 +527,7 @@ export default function PointsSettingsPage() {
 
       {/* Detail Poin Dialog */}
       <Dialog open={!!selectedPointDetail} onOpenChange={(open) => !open && setSelectedPointDetail(null)}>
-        <DialogContent className="sm:max-w-md sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="sm:max-w-md sm:rounded-none max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <CircleDollarSign className="w-5 h-5 text-primary" />
@@ -537,7 +537,7 @@ export default function PointsSettingsPage() {
 
           {selectedPointDetail && (
             <div className="space-y-4 py-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-none border border-slate-100 dark:border-slate-800 space-y-4">
                 <div className="grid grid-cols-[1fr_auto] gap-4">
                   <div className="min-w-0">
                     <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Outlet</p>

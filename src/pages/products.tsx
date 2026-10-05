@@ -70,7 +70,7 @@ export default function ProductsPage() {
   const sortedProducts = useMemo(() => {
     if (!products) return [];
     const sorted = [...products];
-    
+
     if (sortOrder === "nameAsc") {
       sorted.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortOrder === "nameDesc") {
@@ -78,7 +78,7 @@ export default function ProductsPage() {
     } else {
       sorted.sort((a, b) => b.id - a.id);
     }
-    
+
     return sorted;
   }, [products, sortOrder]);
 
@@ -462,7 +462,7 @@ export default function ProductsPage() {
     return (
       <Sidebar>
         <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 p-6 h-full min-h-[calc(100vh-4rem)]">
-          <div className="max-w-md w-full p-8 text-center flex flex-col items-center bg-white dark:bg-slate-800 shadow-lg border border-red-200 dark:border-red-900/50 rounded-2xl">
+          <div className="max-w-md w-full p-8 text-center flex flex-col items-center bg-white dark:bg-slate-800 shadow-lg border border-red-200 dark:border-red-900/50 rounded-none">
             <div className="w-20 h-20 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-red-200/50 dark:border-red-800/50">
               <AlertTriangle className="w-10 h-10 text-red-600 dark:text-red-500" />
             </div>
@@ -511,7 +511,7 @@ export default function ProductsPage() {
                 className="pl-9"
               />
             </div>
-            
+
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
@@ -593,7 +593,7 @@ export default function ProductsPage() {
                 const productImage = getProductImage(product);
 
                 return (
-                  <div key={product.id} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200" onClick={() => { setDetailProduct(product); setIsDetailDialogOpen(true); }}>
+                  <div key={product.id} className="bg-white dark:bg-slate-900 rounded-none border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200" onClick={() => { setDetailProduct(product); setIsDetailDialogOpen(true); }}>
                     <div className="flex gap-3 p-3">
                       <div className="flex-shrink-0">
                         <div className="w-16 h-16 rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
@@ -618,14 +618,14 @@ export default function ProductsPage() {
                               </div>
                             )}
                           </div>
-                          
+
                           <div className="flex flex-col items-end gap-2 h-full">
                             {product.isActive ? (
                               <Badge className="bg-green-500 dark:bg-green-600 whitespace-nowrap text-xs">Aktif</Badge>
                             ) : (
                               <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 whitespace-nowrap text-xs">Nonaktif</Badge>
                             )}
-                            
+
                             <div className="mt-auto">
                               {isAdmin ? (
                                 <Popover>
@@ -635,7 +635,7 @@ export default function ProductsPage() {
                                       <ChevronDown className="w-3 h-3 opacity-50" />
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-64 p-0 rounded-xl shadow-xl overflow-hidden border-slate-200 dark:border-slate-800" align="end" onClick={(e) => e.stopPropagation()}>
+                                  <PopoverContent className="w-64 p-0 rounded-none shadow-xl overflow-hidden border-slate-200 dark:border-slate-800" align="end" onClick={(e) => e.stopPropagation()}>
                                     <div className="bg-slate-50 dark:bg-slate-900/80 p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
                                       <div>
                                         <p className="text-sm font-bold text-slate-900 dark:text-white leading-none">Daftar Harga</p>
@@ -646,7 +646,7 @@ export default function ProductsPage() {
                                       {outlets?.filter((o: any) => product.allowed_outlets?.includes("all") || product.allowed_outlets?.includes(o.id.toString())).map((outlet: any) => {
                                         const price = (product.outlet_prices && product.outlet_prices[outlet.id.toString()]) || product.price || 0;
                                         return (
-                                          <div key={outlet.id} className="flex justify-between items-center text-sm p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors cursor-default group">
+                                          <div key={outlet.id} className="flex justify-between items-center text-sm p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-none transition-colors cursor-default group">
                                             <span className="text-slate-600 dark:text-slate-300 truncate max-w-[130px] font-medium group-hover:text-primary transition-colors" title={outlet.name}>{outlet.name}</span>
                                             <span className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{formatRupiah(price)}</span>
                                           </div>
@@ -689,7 +689,7 @@ export default function ProductsPage() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-none shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -716,7 +716,7 @@ export default function ProductsPage() {
                       return (
                         <TableRow key={product.id} className="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm relative hover:z-10 transition-all duration-200 cursor-pointer" onClick={() => { setDetailProduct(product); setIsDetailDialogOpen(true); }}>
                           <TableCell className="text-center">
-                            <div className="w-14 h-14 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 mx-auto">
+                            <div className="w-14 h-14 rounded-none border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 mx-auto">
                               {productImage ? (
                                 <img src={productImage} alt={product.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                               ) : (
@@ -734,7 +734,7 @@ export default function ProductsPage() {
                                     <ChevronDown className="w-3.5 h-3.5 opacity-50" />
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-64 p-0 rounded-xl shadow-xl overflow-hidden border-slate-200 dark:border-slate-800" align="end" onClick={(e) => e.stopPropagation()}>
+                                <PopoverContent className="w-64 p-0 rounded-none shadow-xl overflow-hidden border-slate-200 dark:border-slate-800" align="end" onClick={(e) => e.stopPropagation()}>
                                   <div className="bg-slate-50 dark:bg-slate-900/80 p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
                                     <div>
                                       <p className="text-sm font-bold text-slate-900 dark:text-white leading-none">Daftar Harga</p>
@@ -745,7 +745,7 @@ export default function ProductsPage() {
                                     {outlets?.filter((o: any) => product.allowed_outlets?.includes("all") || product.allowed_outlets?.includes(o.id.toString())).map((outlet: any) => {
                                       const price = (product.outlet_prices && product.outlet_prices[outlet.id.toString()]) || product.price || 0;
                                       return (
-                                        <div key={outlet.id} className="flex justify-between items-center text-sm p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors cursor-default group">
+                                        <div key={outlet.id} className="flex justify-between items-center text-sm p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-none transition-colors cursor-default group">
                                           <span className="text-slate-600 dark:text-slate-300 truncate max-w-[130px] font-medium group-hover:text-primary transition-colors" title={outlet.name}>{outlet.name}</span>
                                           <span className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{formatRupiah(price)}</span>
                                         </div>
@@ -804,7 +804,7 @@ export default function ProductsPage() {
 
       {/* Add/Edit Product Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
-        <DialogContent className="sm:max-w-md sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="sm:max-w-md sm:rounded-none max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader>
             <DialogTitle>{editingProduct ? "Edit Produk" : "Tambah Produk"}</DialogTitle>
           </DialogHeader>
@@ -814,7 +814,7 @@ export default function ProductsPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Foto Produk</label>
               <div className="flex flex-col items-center gap-3">
-                <div className="relative w-32 h-32 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                <div className="relative w-32 h-32 rounded-none border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
                   {imagePreview ? (
                     <>
                       <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
@@ -831,7 +831,7 @@ export default function ProductsPage() {
                 </div>
 
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/jpg" onChange={handleImageSelect} className="hidden" id="image-upload" />
-                <label htmlFor="image-upload" className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors text-sm font-medium">
+                <label htmlFor="image-upload" className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-none cursor-pointer transition-colors text-sm font-medium">
                   <Upload className="w-4 h-4" />
                   {imageFile || formData.imageUrl ? "Ganti Foto" : "Pilih Foto"}
                 </label>
@@ -861,7 +861,7 @@ export default function ProductsPage() {
 
             {/* Outlet */}
             {isAdmin && (
-              <div className="space-y-3 border border-slate-200 dark:border-slate-800 p-3 rounded-lg bg-slate-50/50 dark:bg-slate-900/50">
+              <div className="space-y-3 border border-slate-200 dark:border-slate-800 p-3 rounded-none bg-slate-50/50 dark:bg-slate-900/50">
                 <label className="text-sm font-medium">Outlet yang Diizinkan & Harga Khusus</label>
                 <div className="space-y-2 max-h-[250px] overflow-y-auto scrollbar-hide">
                   <div className="flex items-center space-x-2">
@@ -903,12 +903,12 @@ export default function ProductsPage() {
                           {outlet.name}
                         </label>
                       </div>
-                      
+
                       {(formData.allowedOutlets.includes("all") || formData.allowedOutlets.includes(outlet.id.toString())) && (
                         <div className="pl-6 flex items-center gap-2">
                           <label className="text-xs text-slate-500 min-w-[50px]">Harga:</label>
-                          <Input 
-                            className="h-7 text-xs" 
+                          <Input
+                            className="h-7 text-xs"
                             placeholder="Masukkan harga"
                             value={formData.outletPrices[outlet.id.toString()] || ""}
                             onChange={(e) => handleOutletPriceChange(outlet.id.toString(), e.target.value)}
@@ -922,7 +922,7 @@ export default function ProductsPage() {
             )}
 
             {/* Active */}
-            <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-none bg-slate-50/50 dark:bg-slate-900/50">
               <label htmlFor="isActive" className="text-sm font-medium cursor-pointer">Produk Aktif</label>
               <Switch id="isActive" checked={formData.isActive} onCheckedChange={(checked) => handleFormChange('isActive', checked)} />
             </div>
@@ -949,7 +949,7 @@ export default function ProductsPage() {
           if (!open) resetCategoryForm();
         }}
       >
-        <DialogContent className="sm:max-w-md sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="sm:max-w-md sm:rounded-none max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader>
             <DialogTitle>Kategori Produk</DialogTitle>
           </DialogHeader>
@@ -976,7 +976,7 @@ export default function ProductsPage() {
             )}
 
             {isAdmin && (showCategoryOutlets || editingCategoryId) && (
-              <div className="space-y-3 border border-slate-200 dark:border-slate-800 p-3 rounded-lg bg-slate-50/50 dark:bg-slate-900/50">
+              <div className="space-y-3 border border-slate-200 dark:border-slate-800 p-3 rounded-none bg-slate-50/50 dark:bg-slate-900/50">
                 <label className="text-sm font-medium">Tersedia di Outlet (Kategori)</label>
                 <div className="space-y-2 max-h-[150px] overflow-y-auto scrollbar-hide">
                   <div className="flex items-center space-x-2">
@@ -1029,7 +1029,7 @@ export default function ProductsPage() {
                 <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">Belum ada kategori</p>
               ) : (
                 categories?.map((cat: any) => (
-                  <div key={cat.id} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-lg">
+                  <div key={cat.id} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-none">
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-slate-900 dark:text-white">{cat.name}</span>
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
@@ -1062,14 +1062,14 @@ export default function ProductsPage() {
 
       {/* Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="sm:max-w-sm sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="sm:max-w-sm sm:rounded-none max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader>
             <DialogTitle>Detail Produk</DialogTitle>
           </DialogHeader>
           {detailProduct && (
             <div className="space-y-4 py-4">
               <div className="flex flex-col items-center gap-3">
-                <div className="w-24 h-24 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden shadow-sm">
+                <div className="w-24 h-24 rounded-none border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden shadow-sm">
                   {getProductImage(detailProduct) ? (
                     <img src={getProductImage(detailProduct)!} alt={detailProduct.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                   ) : (
@@ -1100,15 +1100,15 @@ export default function ProductsPage() {
               {isAdmin && (
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-5">
                   <label className="text-xs text-slate-500 block mb-2">Outlet yang Diizinkan</label>
-                  <ul className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 rounded-xl leading-relaxed shadow-sm space-y-2">
+                  <ul className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 rounded-none leading-relaxed shadow-sm space-y-2">
                     {(() => {
                       const allowedOutlets = detailProduct.allowed_outlets || ["all"];
                       const isAll = allowedOutlets.includes("all");
                       const outletPrices = detailProduct.outlet_prices || {};
                       const defaultPrice = detailProduct.price;
 
-                      const outletsToShow = isAll 
-                        ? (outlets || []) 
+                      const outletsToShow = isAll
+                        ? (outlets || [])
                         : (outlets || []).filter((o: any) => allowedOutlets.includes(o.id.toString()));
 
                       return outletsToShow.map((outlet: any) => {

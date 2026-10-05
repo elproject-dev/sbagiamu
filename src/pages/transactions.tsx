@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, CreditCard, Banknote, QrCode, Award, Building2, User, History, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, ChevronLeft, CreditCard, Banknote, QrCode, Award, Building2, User, History, SlidersHorizontal, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { ADMIN_EMAIL } from "@/lib/auth";
@@ -78,7 +78,7 @@ export default function TransactionsPage() {
   // Get outlets for filter
   const { data: outlets } = useListOutlets();
 
-  const { data: transactions, totalCount, totalAmount, isLoading, refetch } = useListTransactions({
+  const { data: transactions, totalCount, totalAmount, isLoading, isFetching, refetch } = useListTransactions({
     paymentMethod: paymentMethod === "all" ? undefined : paymentMethod,
     outletFilter: outletFilter === "all" ? undefined : outletFilter,
     cashierFilter: cashierFilter === "all" ? undefined : cashierFilter,
@@ -190,148 +190,160 @@ export default function TransactionsPage() {
               <span className="truncate">Riwayat Transaksi</span>
             </h1>
 
-            {/* Filter Section (Popover) */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="shrink-0 w-9 h-9 sm:w-auto sm:h-9 rounded-full sm:rounded-md p-0 sm:px-4 flex items-center justify-center sm:gap-2">
-                  <SlidersHorizontal className="w-4 h-4" />
-                  <span className="hidden sm:inline">Filter Transaksi</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-[340px] max-w-[95vw] sm:w-[400px] p-4 sm:rounded-2xl shadow-xl">
-                <div className="space-y-4">
-                  <div className="font-semibold text-sm mb-2">Filter Data</div>
+            <div className="flex items-center gap-2">
+              {/* Refresh Button */}
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 w-9 h-9 rounded-none"
+                onClick={() => { if (refetch) refetch(); }}
+                disabled={isFetching || isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${isFetching || isLoading ? 'animate-spin' : ''}`} />
+              </Button>
 
-                  {/* Transaction Search */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-500">Pencarian Nomor Transaksi</label>
-                    <Input
-                      type="text"
-                      placeholder="Cari ID Transaksi..."
-                      value={transactionSearch}
-                      onChange={(e: any) => { setTransactionSearch(e.target.value); setPage(1); }}
-                      className="h-9 w-full text-sm"
-                    />
-                  </div>
+              {/* Filter Section (Popover) */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" className="shrink-0 w-9 h-9 rounded-none">
+                    <SlidersHorizontal className="w-4 h-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-[340px] max-w-[95vw] sm:w-[400px] p-4 sm:rounded-none shadow-xl">
+                  <div className="space-y-4">
+                    <div className="font-semibold text-sm mb-2">Filter Data</div>
 
-                  {/* Date Filters */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-500">Rentang Tanggal</label>
-                    <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
-                      <div className="relative w-full h-9">
-                        <Input
-                          type="text"
-                          placeholder="Tanggal Mulai"
-                          value={startDate ? startDate.split('-').reverse().join('-') : ""}
-                          readOnly
-                          className="absolute inset-0 h-9 w-full rounded-md text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
-                        />
-                        <input
-                          type="date"
-                          value={startDate}
-                          onChange={(e: any) => { setStartDate(e.target.value); setPage(1); }}
-                          onClick={(e: any) => {
-                            try { e.target.showPicker?.(); } catch (err) { }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          title="Tanggal Mulai"
-                        />
-                      </div>
-                      <span className="text-slate-400 text-sm hidden sm:block">-</span>
-                      <div className="relative w-full h-9">
-                        <Input
-                          type="text"
-                          placeholder="Tanggal Akhir"
-                          value={endDate ? endDate.split('-').reverse().join('-') : ""}
-                          readOnly
-                          className="absolute inset-0 h-9 w-full rounded-md text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
-                        />
-                        <input
-                          type="date"
-                          value={endDate}
-                          onChange={(e: any) => { setEndDate(e.target.value); setPage(1); }}
-                          onClick={(e: any) => {
-                            try { e.target.showPicker?.(); } catch (err) { }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          title="Tanggal Akhir"
-                        />
+                    {/* Transaction Search */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-500">Pencarian Nomor Transaksi</label>
+                      <Input
+                        type="text"
+                        placeholder="Cari ID Transaksi..."
+                        value={transactionSearch}
+                        onChange={(e: any) => { setTransactionSearch(e.target.value); setPage(1); }}
+                        className="h-9 w-full text-sm"
+                      />
+                    </div>
+
+                    {/* Date Filters */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-500">Rentang Tanggal</label>
+                      <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+                        <div className="relative w-full h-9">
+                          <Input
+                            type="text"
+                            placeholder="Tanggal Mulai"
+                            value={startDate ? startDate.split('-').reverse().join('-') : ""}
+                            readOnly
+                            className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                          />
+                          <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e: any) => { setStartDate(e.target.value); setPage(1); }}
+                            onClick={(e: any) => {
+                              try { e.target.showPicker?.(); } catch (err) { }
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            title="Tanggal Mulai"
+                          />
+                        </div>
+                        <span className="text-slate-400 text-sm hidden sm:block">-</span>
+                        <div className="relative w-full h-9">
+                          <Input
+                            type="text"
+                            placeholder="Tanggal Akhir"
+                            value={endDate ? endDate.split('-').reverse().join('-') : ""}
+                            readOnly
+                            className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                          />
+                          <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e: any) => { setEndDate(e.target.value); setPage(1); }}
+                            onClick={(e: any) => {
+                              try { e.target.showPicker?.(); } catch (err) { }
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            title="Tanggal Akhir"
+                          />
+                        </div>
                       </div>
                     </div>
+
+                    {/* Only show for admin super */}
+                    {isAdminSuper && (
+                      <>
+                        {/* Outlet Filter */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-slate-500">Outlet</label>
+                          <Select value={outletFilter} onValueChange={(v) => { setOutletFilter(v); setPage(1); }}>
+                            <SelectTrigger className="h-9 w-full rounded-none border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
+                              <Building2 className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+                              <SelectValue placeholder="Semua Outlet" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Semua Outlet</SelectItem>
+                              {outlets?.map((outlet: any) => (
+                                <SelectItem key={outlet.id} value={outlet.id.toString()}>
+                                  {outlet.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Cashier Filter */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-slate-500">Kasir</label>
+                          <Select value={cashierFilter} onValueChange={(v) => { setCashierFilter(v); setPage(1); }}>
+                            <SelectTrigger className="h-9 w-full rounded-none border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
+                              <User className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+                              <SelectValue placeholder="Semua Kasir" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Semua Kasir</SelectItem>
+                              {cashiers.map((cashier) => (
+                                <SelectItem key={cashier} value={cashier}>
+                                  {cashier}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Payment Method Filter */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-500">Metode Pembayaran</label>
+                      <Select value={paymentMethod} onValueChange={handlePaymentMethodChange}>
+                        <SelectTrigger className="h-9 w-full rounded-none border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
+                          <CreditCard className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+                          <SelectValue placeholder="Semua Metode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Metode</SelectItem>
+                          <SelectItem value="cash">Tunai</SelectItem>
+                          <SelectItem value="qris">QRIS</SelectItem>
+                          <SelectItem value="transfer">Transfer</SelectItem>
+                          <SelectItem value="debit_card">Debit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-
-                  {/* Only show for admin super */}
-                  {isAdminSuper && (
-                    <>
-                      {/* Outlet Filter */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-slate-500">Outlet</label>
-                        <Select value={outletFilter} onValueChange={(v) => { setOutletFilter(v); setPage(1); }}>
-                          <SelectTrigger className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
-                            <Building2 className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
-                            <SelectValue placeholder="Semua Outlet" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Semua Outlet</SelectItem>
-                            {outlets?.map((outlet: any) => (
-                              <SelectItem key={outlet.id} value={outlet.id.toString()}>
-                                {outlet.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Cashier Filter */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-slate-500">Kasir</label>
-                        <Select value={cashierFilter} onValueChange={(v) => { setCashierFilter(v); setPage(1); }}>
-                          <SelectTrigger className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
-                            <User className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
-                            <SelectValue placeholder="Semua Kasir" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Semua Kasir</SelectItem>
-                            {cashiers.map((cashier) => (
-                              <SelectItem key={cashier} value={cashier}>
-                                {cashier}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Payment Method Filter */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-500">Metode Pembayaran</label>
-                    <Select value={paymentMethod} onValueChange={handlePaymentMethodChange}>
-                      <SelectTrigger className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1">
-                        <CreditCard className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
-                        <SelectValue placeholder="Semua Metode" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Semua Metode</SelectItem>
-                        <SelectItem value="cash">Tunai</SelectItem>
-                        <SelectItem value="qris">QRIS</SelectItem>
-                        <SelectItem value="transfer">Transfer</SelectItem>
-                        <SelectItem value="debit_card">Debit</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
 
-        <div className="p-4 sm:p-6 flex-1 overflow-x-hidden pb-20">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide pb-20">
 
           {/* Info Summary Cards for Filtered Transactions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg text-primary">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-none border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-primary/10 rounded-none text-primary">
                 <History className="w-5 h-5" />
               </div>
               <div>
@@ -341,8 +353,8 @@ export default function TransactionsPage() {
                 </h3>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg text-primary">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-none border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-primary/10 rounded-none text-primary">
                 <Banknote className="w-5 h-5" />
               </div>
               <div>
@@ -372,7 +384,7 @@ export default function TransactionsPage() {
 
                   return (
                     <Link key={trx.id} href={`/transactions/${trx.id}`}>
-                      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 flex flex-col gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200">
+                      <div className="bg-white dark:bg-slate-900 rounded-none border border-slate-200 dark:border-slate-800 shadow-sm p-4 flex flex-col gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-md active:bg-primary/5 transition-all duration-200">
                         {/* Row 1: Invoice + Total */}
                         <div className="flex items-start justify-between gap-2">
                           <div>
@@ -455,7 +467,7 @@ export default function TransactionsPage() {
           </div>
 
           {/* ── DESKTOP LARGE: Table (hidden on tablet and below) ── */}
-          <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="hidden lg:block bg-white rounded-none shadow-sm border border-slate-200 overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/50">

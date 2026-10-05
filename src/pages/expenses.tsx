@@ -270,7 +270,7 @@ export default function ExpensesPage() {
         .in("owner_id", uniqueOwnerIds);
 
       const ownerMap = new Map<string, string>();
-      
+
       // Populate map from staff table (best source)
       if (allStaff && allStaff.length > 0) {
         allStaff.forEach(s => {
@@ -299,14 +299,14 @@ export default function ExpensesPage() {
 
       const userOptions: UserOption[] = uniqueOwnerIds.map((id, index) => {
         const lowerId = id.toLowerCase();
-        
+
         // If it's the current user, we can use their name from session
         const isCurrentUser = lowerId === currentUserId?.toLowerCase();
         const currentSessionName = isCurrentUser ? currentUser?.name : null;
-        
+
         // Find staff record from allStaff list
-        const staff = allStaff?.find(s => 
-          (s.owner_id && s.owner_id.toLowerCase() === lowerId) || 
+        const staff = allStaff?.find(s =>
+          (s.owner_id && s.owner_id.toLowerCase() === lowerId) ||
           (s.avatar_url && s.avatar_url.toLowerCase().includes(lowerId))
         );
 
@@ -329,14 +329,14 @@ export default function ExpensesPage() {
   const getStaffNameDisplay = useCallback((ownerId?: string) => {
     if (!ownerId) return "Admin";
     const lowerId = ownerId.toLowerCase();
-    
+
     if (lowerId === currentUserId?.toLowerCase()) {
       return currentUser?.name || "Anda";
     }
-    
+
     // 1. Look in allStaff first (direct and URL extraction)
-    const staff = allStaff?.find(s => 
-      (s.owner_id && s.owner_id.toLowerCase() === lowerId) || 
+    const staff = allStaff?.find(s =>
+      (s.owner_id && s.owner_id.toLowerCase() === lowerId) ||
       (s.avatar_url && s.avatar_url.toLowerCase().includes(lowerId))
     );
     if (staff) return staff.name;
@@ -346,7 +346,7 @@ export default function ExpensesPage() {
     if (mappedUser && !mappedUser.name.startsWith("Staff ")) {
       return mappedUser.name;
     }
-    
+
     return mappedUser?.name || "Staff";
   }, [currentUserId, currentUser, allStaff, users]);
 
@@ -444,7 +444,7 @@ export default function ExpensesPage() {
         image_url: expense.image_url || "",
       });
       if (expense.image_url) {
-         setImagePreview(expense.image_url);
+        setImagePreview(expense.image_url);
       }
     } else {
       setEditingExpense(null);
@@ -463,7 +463,7 @@ export default function ExpensesPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       if (file.size > 1 * 1024 * 1024) {
         toast({ title: "Error", description: "Ukuran file maksimal 1MB", variant: "destructive" });
         e.target.value = '';
@@ -471,7 +471,7 @@ export default function ExpensesPage() {
       }
 
       setImageFile(file);
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -505,11 +505,11 @@ export default function ExpensesPage() {
 
         // If editing and replacing an old image, delete the old one
         if (editingExpense && editingExpense.image_url && editingExpense.image_url !== finalImageUrl) {
-            await deleteExpenseReceipt(editingExpense.image_url);
+          await deleteExpenseReceipt(editingExpense.image_url);
         }
       } else if (editingExpense && editingExpense.image_url && !finalImageUrl) {
-         // User removed the image
-         await deleteExpenseReceipt(editingExpense.image_url);
+        // User removed the image
+        await deleteExpenseReceipt(editingExpense.image_url);
       }
 
       const payload = withTenantOwner({
@@ -557,10 +557,10 @@ export default function ExpensesPage() {
     try {
       const expenseToDelete = expenses.find(e => e.id === id);
       if (expenseToDelete?.image_url) {
-         const deleteRes = await deleteExpenseReceipt(expenseToDelete.image_url);
-         if (!deleteRes.success) {
-           throw new Error(deleteRes.error || "Gagal menghapus foto dari storage");
-         }
+        const deleteRes = await deleteExpenseReceipt(expenseToDelete.image_url);
+        if (!deleteRes.success) {
+          throw new Error(deleteRes.error || "Gagal menghapus foto dari storage");
+        }
       }
 
       const query = applyTenantFilter(
@@ -773,15 +773,15 @@ export default function ExpensesPage() {
     const color = category?.color || "slate";
 
     const colorMap: Record<string, string> = {
-      blue: "bg-blue-600 dark:bg-blue-700 text-white",
-      green: "bg-green-600 dark:bg-green-700 text-white",
-      yellow: "bg-yellow-500 dark:bg-yellow-600 text-white",
-      orange: "bg-orange-500 dark:bg-orange-600 text-white",
-      purple: "bg-purple-600 dark:bg-purple-700 text-white",
-      red: "bg-red-600 dark:bg-red-700 text-white",
-      pink: "bg-pink-600 dark:bg-pink-700 text-white",
-      cyan: "bg-cyan-600 dark:bg-cyan-700 text-white",
-      slate: "bg-slate-600 dark:bg-slate-700 text-white",
+      blue: "bg-transparent text-primary",
+      green: "bg-transparent text-primary",
+      yellow: "bg-transparent text-primary",
+      orange: "bg-transparent text-primary",
+      purple: "bg-transparent text-primary",
+      red: "bg-transparent text-primary",
+      pink: "bg-transparent text-primary",
+      cyan: "bg-transparent text-primary",
+      slate: "bg-transparent text-primary",
     };
     return colorMap[color] || colorMap.slate;
   };
@@ -839,7 +839,7 @@ export default function ExpensesPage() {
   const maxExpense = expenses.length > 0 ? Math.max(...expenses.map((e) => e.amount)) : 0;
   const animatedMaxExpense = useCountUp(maxExpense, { duration: 1400 });
   const animatedTotalExpense = useCountUp(totalExpense, { duration: 1800 });
-  
+
   const animatedTodayCount = useCountUp(todayCount, { duration: 1000 });
   const animatedThisMonthCount = useCountUp(thisMonthCount, { duration: 1200 });
   const animatedTotalCount = useCountUp(expenses.length, { duration: 1400 });
@@ -879,7 +879,7 @@ export default function ExpensesPage() {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-5 items-stretch">
             {/* Pengeluaran Hari Ini */}
-            <div className="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-lg h-full">
+            <div className="rounded-none bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-lg h-full">
               <div className="p-4 sm:p-5 h-full flex flex-col justify-between">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -888,7 +888,7 @@ export default function ExpensesPage() {
                       {formatCurrency(animatedTodayTotal.value)}
                     </p>
                   </div>
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-none bg-white/20 flex items-center justify-center shrink-0">
                     <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                 </div>
@@ -897,7 +897,7 @@ export default function ExpensesPage() {
             </div>
 
             {/* Pengeluaran Bulan Ini */}
-            <div className="rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 border-0 shadow-lg h-full">
+            <div className="rounded-none bg-gradient-to-br from-purple-500 to-purple-600 border-0 shadow-lg h-full">
               <div className="p-4 sm:p-5 h-full flex flex-col justify-between">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -906,7 +906,7 @@ export default function ExpensesPage() {
                       {formatCurrency(animatedThisMonthTotal.value)}
                     </p>
                   </div>
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-none bg-white/20 flex items-center justify-center shrink-0">
                     <Receipt className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                 </div>
@@ -915,7 +915,7 @@ export default function ExpensesPage() {
             </div>
 
             {/* Tertinggi */}
-            <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 border-0 shadow-lg h-full">
+            <div className="rounded-none bg-gradient-to-br from-amber-500 to-orange-600 border-0 shadow-lg h-full">
               <div className="p-4 sm:p-5 h-full flex flex-col justify-between">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -924,7 +924,7 @@ export default function ExpensesPage() {
                       {expenses.length > 0 ? formatCurrency(animatedMaxExpense.value) : "Rp 0"}
                     </p>
                   </div>
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-none bg-white/20 flex items-center justify-center shrink-0">
                     <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                 </div>
@@ -933,14 +933,14 @@ export default function ExpensesPage() {
             </div>
 
             {/* Total Pengeluaran */}
-            <div className="rounded-xl bg-gradient-to-br from-red-500 to-red-600 border-0 shadow-lg h-full">
+            <div className="rounded-none bg-gradient-to-br from-red-500 to-red-600 border-0 shadow-lg h-full">
               <div className="p-4 sm:p-5 h-full flex flex-col justify-between">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-red-100 text-xs sm:text-sm font-medium">Total Pengeluaran</p>
                     <p className="text-lg sm:text-lg md:text-xl font-bold text-white leading-tight mt-1">{formatCurrency(animatedTotalExpense.value)}</p>
                   </div>
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-none bg-white/20 flex items-center justify-center shrink-0">
                     <Wallet className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                 </div>
@@ -957,13 +957,13 @@ export default function ExpensesPage() {
                 placeholder="Cari pengeluaran..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl"
+                className="pl-9 h-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-none"
               />
             </div>
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="h-10 w-full sm:w-auto bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-center shrink-0">
+                <Button variant="outline" className="h-10 w-full sm:w-auto bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-none flex items-center justify-center shrink-0">
                   <SlidersHorizontal className="w-4 h-4 mr-2 text-primary" />
                   <span className="font-medium">Filter</span>
 
@@ -973,7 +973,7 @@ export default function ExpensesPage() {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-[320px] sm:w-[380px] p-4 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800">
+              <PopoverContent align="end" className="w-[320px] sm:w-[380px] p-4 rounded-none shadow-lg border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-white mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
                   <SlidersHorizontal className="w-5 h-5 text-primary" />
                   Filter Pengeluaran
@@ -990,7 +990,7 @@ export default function ExpensesPage() {
                           placeholder="Tanggal Mulai"
                           value={startDate ? startDate.split('-').reverse().join('-') : ""}
                           readOnly
-                          className="absolute inset-0 h-9 w-full rounded-md text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                          className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
                         />
                         <input
                           type="date"
@@ -1010,7 +1010,7 @@ export default function ExpensesPage() {
                           placeholder="Tanggal Akhir"
                           value={endDate ? endDate.split('-').reverse().join('-') : ""}
                           readOnly
-                          className="absolute inset-0 h-9 w-full rounded-md text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                          className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
                         />
                         <input
                           type="date"
@@ -1122,9 +1122,9 @@ export default function ExpensesPage() {
                 </div>
               </div>
             ) : filteredExpenses.length === 0 ? (
-              <div className="text-center py-10 text-slate-500 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="text-center py-10 text-slate-500 bg-white dark:bg-slate-800 rounded-none border border-slate-200 dark:border-slate-700">
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center justify-center">
+                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-none flex items-center justify-center">
                     <Wallet className="w-8 h-8 text-slate-400" />
                   </div>
                   <div>
@@ -1141,7 +1141,7 @@ export default function ExpensesPage() {
               filteredExpenses.map((expense) => {
                 const staffName = getStaffNameDisplay(expense.owner_id);
                 return (
-                  <div key={expense.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex flex-col gap-3">
+                  <div key={expense.id} className="bg-white dark:bg-slate-800 rounded-none border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <div className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
                         {formatDate(expense.date)}
@@ -1162,7 +1162,7 @@ export default function ExpensesPage() {
                         )}
                       </div>
                       <div className="shrink-0 flex flex-col items-end gap-2">
-                        <span className={`inline-flex px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full ${getCategoryColor(expense.category)}`}>
+                        <span className={`inline-flex px-2 py-1 text-[10px] sm:text-xs font-medium rounded-none ${getCategoryColor(expense.category)}`}>
                           {getCategoryLabel(expense.category)}
                         </span>
                         {expense.image_url && (
@@ -1219,7 +1219,7 @@ export default function ExpensesPage() {
           </div>
 
           {/* ── DESKTOP LARGE: Table (hidden on tablet and below) ── */}
-          <div className="hidden lg:block rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="hidden lg:block rounded-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="p-4 border-b border-slate-100 dark:border-slate-700">
               <h3 className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white">Daftar Pengeluaran</h3>
             </div>
@@ -1252,7 +1252,7 @@ export default function ExpensesPage() {
                   <TableRow>
                     <TableCell colSpan={isAdmin ? 10 : 8} className="text-center py-16 text-slate-500">
                       <div className="flex flex-col items-center gap-3">
-                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-none flex items-center justify-center">
                           <Wallet className="w-8 h-8 text-slate-400" />
                         </div>
                         <div>
@@ -1275,7 +1275,7 @@ export default function ExpensesPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         <span
-                          className={`inline-flex px-3 py-1.5 text-xs font-medium rounded-full ${getCategoryColor(
+                          className={`inline-flex px-3 py-1.5 text-xs font-medium rounded-none ${getCategoryColor(
                             expense.category
                           )}`}
                         >
@@ -1287,14 +1287,14 @@ export default function ExpensesPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         {expense.image_url ? (
-                          <div 
-                            className="w-10 h-10 mx-auto rounded-md overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-primary/50 transition-all"
+                          <div
+                            className="w-10 h-10 mx-auto rounded-none overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-primary/50 transition-all"
                             onClick={(e) => { e.stopPropagation(); setViewImageUrl(expense.image_url || null); }}
                             title="Lihat Bukti"
                           >
-                            <img 
-                              src={expense.image_url} 
-                              alt="Bukti" 
+                            <img
+                              src={expense.image_url}
+                              alt="Bukti"
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -1428,15 +1428,15 @@ export default function ExpensesPage() {
                 <span>Foto Bukti Transaksi</span>
                 <span className="text-xs font-normal text-slate-400">(Opsional)</span>
               </Label>
-              
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-xl relative overflow-hidden group">
+
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-none relative overflow-hidden group">
                 <div className="space-y-1 text-center relative z-10">
                   {imagePreview ? (
                     <div className="relative group/preview">
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        className="mx-auto h-32 w-auto rounded-lg object-contain bg-slate-100 dark:bg-slate-800" 
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="mx-auto h-32 w-auto rounded-none object-contain bg-slate-100 dark:bg-slate-800"
                       />
                       <button
                         type="button"
@@ -1449,20 +1449,20 @@ export default function ExpensesPage() {
                   ) : (
                     <>
                       <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
-                         <Camera className="mx-auto h-6 w-6" aria-hidden="true" />
+                        <Camera className="mx-auto h-6 w-6" aria-hidden="true" />
                       </div>
                       <div className="flex text-sm text-slate-600 dark:text-slate-400 justify-center">
                         <label
                           htmlFor="receipt-upload"
-                          className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary"
+                          className="relative cursor-pointer rounded-none font-medium text-primary hover:text-primary/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary"
                         >
                           <span>Upload file</span>
-                          <input 
-                            id="receipt-upload" 
-                            name="receipt-upload" 
-                            type="file" 
-                            accept="image/jpeg,image/png,image/webp" 
-                            className="sr-only" 
+                          <input
+                            id="receipt-upload"
+                            name="receipt-upload"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="sr-only"
                             onChange={handleImageChange}
                           />
                         </label>
@@ -1511,9 +1511,9 @@ export default function ExpensesPage() {
               <Button onClick={handleAddCategory}>Tambah</Button>
             </div>
 
-            <div className="max-h-[300px] overflow-y-auto space-y-2 border rounded-md p-2">
+            <div className="max-h-[300px] overflow-y-auto space-y-2 border rounded-none p-2">
               {categories.map((cat) => (
-                <div key={cat.id} className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg group">
+                <div key={cat.id} className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-none group">
                   <div className="flex items-center gap-2">
                     <span className={`w-3 h-3 rounded-full ${getBadgeDotColor(cat.color)}`} />
                     <span className="font-medium text-slate-700 dark:text-slate-300">{cat.name}</span>
@@ -1590,7 +1590,7 @@ export default function ExpensesPage() {
             <button
               onClick={() => handleExportExpenses('today')}
               disabled={downloadLoading || isLoading}
-              className="w-full flex items-center gap-4 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors border-2 border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center gap-4 p-4 rounded-none bg-blue-50 hover:bg-blue-100 transition-colors border-2 border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
                 <Calendar className="w-6 h-6 text-white" />
@@ -1607,7 +1607,7 @@ export default function ExpensesPage() {
             <button
               onClick={() => handleExportExpenses('thisMonth')}
               disabled={downloadLoading || isLoading}
-              className="w-full flex items-center gap-4 p-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-colors border-2 border-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center gap-4 p-4 rounded-none bg-emerald-50 hover:bg-emerald-100 transition-colors border-2 border-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
                 <Calendar className="w-6 h-6 text-white" />
@@ -1655,7 +1655,7 @@ export default function ExpensesPage() {
               <img
                 src={viewImageUrl}
                 alt="Bukti Transaksi"
-                className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                className="max-w-full max-h-[80vh] object-contain rounded-none shadow-2xl"
               />
             )}
           </div>

@@ -202,6 +202,8 @@ export default function POSPage() {
   const [lastTransaction, setLastTransaction] = useState<any>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [showProducts, setShowProducts] = useState(false); // Default tidak menampilkan produk
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
@@ -739,35 +741,42 @@ export default function POSPage() {
       return;
     }
 
-    // Create pelanggan baru dari input manual agar langsung masuk ke data pelanggan
-    let finalCustomerId = customerId;
-    const manualName = manualCustomerName.trim();
-    const manualPhone = manualCustomerPhone.trim();
-    const manualEmail = manualCustomerEmail.trim();
-    const normalizedCustomerType = customerType === "member" ? "member" : "non_member";
+    if (isCheckoutLoading || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsCheckoutLoading(true);
 
-    if (!customerId && manualName) {
-      const newCustomer = await createNewCustomer(manualName, manualPhone, manualEmail, normalizedCustomerType);
-      if (newCustomer) {
-        finalCustomerId = newCustomer.id;
-        toast({ title: "Sukses", description: `Pelanggan baru "${newCustomer.name}" berhasil dibuat`, variant: "default" });
-      } else {
-        // Jika gagal membuat pelanggan (misal nomor HP kembar), batalkan transaksi
-        return;
+    try {
+      // Create pelanggan baru dari input manual agar langsung masuk ke data pelanggan
+      let finalCustomerId = customerId;
+      const manualName = manualCustomerName.trim();
+      const manualPhone = manualCustomerPhone.trim();
+      const manualEmail = manualCustomerEmail.trim();
+      const normalizedCustomerType = customerType === "member" ? "member" : "non_member";
+
+      if (!customerId && manualName) {
+        const newCustomer = await createNewCustomer(manualName, manualPhone, manualEmail, normalizedCustomerType);
+        if (newCustomer) {
+          finalCustomerId = newCustomer.id;
+          toast({ title: "Sukses", description: `Pelanggan baru "${newCustomer.name}" berhasil dibuat`, variant: "default" });
+        } else {
+          // Jika gagal membuat pelanggan (misal nomor HP kembar), batalkan transaksi
+          isSubmittingRef.current = false;
+          setIsCheckoutLoading(false);
+          return;
+        }
       }
-    }
 
-    const isMemberTransaction = selectedCustomer?.membership_type === "member" || customerType === "member";
-    const receiptCustomerName = selectedCustomer?.name || manualCustomerName || "Umum";
-    const currentCustomerPoints = selectedCustomer?.points || 0;
-    const finalCustomerPoints = isMemberTransaction
-      ? Math.max(0, currentCustomerPoints + earnedPoints - pointsRedeemed)
-      : 0;
+      const isMemberTransaction = selectedCustomer?.membership_type === "member" || customerType === "member";
+      const receiptCustomerName = selectedCustomer?.name || manualCustomerName || "Umum";
+      const currentCustomerPoints = selectedCustomer?.points || 0;
+      const finalCustomerPoints = isMemberTransaction
+        ? Math.max(0, currentCustomerPoints + earnedPoints - pointsRedeemed)
+        : 0;
 
-    createTransaction.mutate({
-      data: {
-        customerId: finalCustomerId,
-        cashierName,
+      createTransaction.mutate({
+        data: {
+          customerId: finalCustomerId,
+          cashierName,
         paymentMethod: paymentMethod as any,
         discount,
         discountNote: discountNote,
@@ -885,11 +894,20 @@ export default function POSPage() {
           total,
           res?.id != null ? formatInvoiceNumber(res.id) : undefined
         );
+        isSubmittingRef.current = false;
+        setIsCheckoutLoading(false);
       },
       onError: (error: any) => {
         toast({ title: "Error", description: error?.message || "Gagal menyimpan transaksi", variant: "destructive" });
+        isSubmittingRef.current = false;
+        setIsCheckoutLoading(false);
       }
     });
+    } catch (error) {
+      console.error("Checkout error:", error);
+      isSubmittingRef.current = false;
+      setIsCheckoutLoading(false);
+    }
   };
 
   const selectedCustomer = customers?.find(c => c.id === customerId);
@@ -1614,10 +1632,10 @@ export default function POSPage() {
               <Button
                 className="w-full h-12 text-base font-medium shadow-lg"
                 size="lg"
-                disabled={cart.length === 0 || createTransaction.isPending || (paymentMethod === "cash" && amountPaid < total) || orderType === "belum_dipilih"}
+                disabled={cart.length === 0 || isCheckoutLoading || createTransaction.isPending || (paymentMethod === "cash" && amountPaid < total) || orderType === "belum_dipilih"}
                 onClick={handleCheckout}
               >
-                {createTransaction.isPending ? (
+                {isCheckoutLoading || createTransaction.isPending ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Memproses...

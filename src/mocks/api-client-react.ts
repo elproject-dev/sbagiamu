@@ -11,6 +11,11 @@ const toNumber = (value: any) => {
 
 // Get transaction total with points discount
 const getTransactionTotal = (transaction: any, pointsValue: number) => {
+  const amountPaid = toNumber(transaction.amount_paid);
+  const change = toNumber(transaction.change);
+  if (amountPaid > 0) {
+    return Math.max(0, amountPaid - change);
+  }
   const pointsDiscount = toNumber(transaction.points_used) * pointsValue;
   return Math.max(
     0,
@@ -85,7 +90,7 @@ export const useGetDashboardStats = (params?: any) => {
       let transactionsQuery = applyTenantFilter(
         supabase
           .from('transactions')
-          .select('created_at, subtotal, tax, discount, points_used, cashier_name')
+          .select('created_at, subtotal, tax, discount, points_used, cashier_name, amount_paid, change')
           .eq('status', 'completed')
           .gte('created_at', periodStartIso)
           .lt('created_at', periodEndIso)
@@ -336,7 +341,7 @@ export const useGetRecentTransactions = (params?: any) => {
       let query = applyTenantFilter(
         supabase
           .from('transactions')
-          .select('id, created_at, subtotal, tax, discount, points_used, cashier_name, outlet_id, customers(name)')
+          .select('id, created_at, subtotal, tax, discount, points_used, cashier_name, outlet_id, amount_paid, change, customers(name)')
           .order('created_at', { ascending: false })
           .limit(20)
       );
@@ -458,7 +463,7 @@ export const useGetRevenueChart = (params?: any) => {
       let query = applyTenantFilter(
         supabase
           .from('transactions')
-          .select('created_at, subtotal, tax, discount, points_used')
+          .select('created_at, subtotal, tax, discount, points_used, amount_paid, change')
           .eq('status', 'completed')
           .gte('created_at', chartStart.toISOString())
           .lte('created_at', chartEnd.toISOString())
@@ -605,7 +610,7 @@ export const useAdvancedAnalytics = (params?: any) => {
       let trxQuery = applyTenantFilter(
         supabase
           .from('transactions')
-          .select('id, outlet_id, customer_id, subtotal, tax, discount, points_used, created_at, transaction_items(product_id, product_name, quantity, subtotal)')
+          .select('id, outlet_id, customer_id, subtotal, tax, discount, points_used, amount_paid, change, created_at, transaction_items(product_id, product_name, quantity, subtotal)')
           .eq('status', 'completed')
       );
 
@@ -1008,7 +1013,7 @@ export const useListTransactions = (params?: any) => {
     queryKey: ['transactions', params],
     queryFn: async () => {
       // First, get total count and total amount with the same filters (but no limit/offset)
-      let countSelect = 'subtotal, tax, discount, points_used';
+      let countSelect = 'subtotal, tax, discount, points_used, amount_paid, change';
       let countQuery = applyTenantFilter(
         supabase
           .from('transactions')
@@ -1966,6 +1971,13 @@ export const useListPointsSettings = () => {
 
       if (error) throw error;
 
+      if (settings && settings.length > 0) {
+        const globalSetting = settings.find((s: any) => !s.outlet_id && !s.staff_email) || settings[0];
+        if (globalSetting?.points_value != null) {
+          localStorage.setItem('pointsValue', globalSetting.points_value.toString());
+        }
+      }
+
       const formatted = (settings || []).map((s: any) => ({
         id: s.id,
         outletId: s.outlet_id,
@@ -2002,6 +2014,9 @@ export const useSavePointsSettings = () => {
     mutate: async (params: any, options?: any) => {
       setIsPending(true);
       try {
+        if (params.pointsValue) {
+          localStorage.setItem('pointsValue', params.pointsValue.toString());
+        }
         const payload: any = {
           enable_points: params.enablePoints,
           points_value: parseInt(params.pointsValue) || 1000,

@@ -1,5 +1,5 @@
 import { Sidebar } from "@/components/layout/Sidebar";
-import { useDeleteTransaction, useGetTransaction } from "@workspace/api-client-react";
+import { useDeleteTransaction, useGetTransaction, useListPointsSettings } from "@workspace/api-client-react";
 import { formatRupiah, formatDate, formatInvoiceNumber } from "@/lib/formatters";
 import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ const getPointsSettingsForUser = (user: any) => {
   };
 
   const enablePoints = getVal('enablePoints', 'true') === 'true';
-  const pointsValue = parseInt(getVal('pointsValue', '1000'));
+  const pointsValue = parseInt(getVal('pointsValue', '500'));
   return { enablePoints, pointsValue };
 };
 
@@ -69,12 +69,47 @@ export default function TransactionDetailPage() {
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   const { data: trx, isLoading } = useGetTransaction(id);
+  const { data: allPointsSettings } = useListPointsSettings();
   const deleteTransaction = useDeleteTransaction();
   const [isPrinting, setIsPrinting] = useState(false);
 
   const displayedStoreName = trx?.outlets?.store_name || trx?.outlets?.name || storeInfo.name;
   const displayedAddress = trx?.outlets?.address || storeInfo.address;
   const displayedPhone = trx?.outlets?.phone || '';
+
+  const { enablePoints, pointsValue: fallbackPointsValue } = getPointsSettingsForUser(user);
+  const activePointsSetting = allPointsSettings?.find((s: any) =>
+    (!s.outletId || s.outletId === trx?.outlet_id) &&
+    (!s.staffEmail || s.staffEmail === trx?.cashier_name)
+  ) || allPointsSettings?.[0];
+
+  const pointsValue = activePointsSetting?.pointsValue
+    ? parseInt(activePointsSetting.pointsValue)
+    : fallbackPointsValue;
+
+  const subtotal = Number(trx?.subtotal) || 0;
+  const displayedTax = Number(trx?.tax) || 0;
+  const discount = Number(trx?.discount) || 0;
+  const pointsUsed = Number(trx?.points_used) || 0;
+  const amountPaid = Number(trx?.amount_paid) || 0;
+  const change = Number(trx?.change) || 0;
+
+  let total: number;
+  let pointsDiscount: number;
+
+  if (amountPaid > 0) {
+    total = Math.max(0, amountPaid - change);
+    pointsDiscount = pointsUsed > 0
+      ? Math.max(0, subtotal + displayedTax - discount - total)
+      : 0;
+    if (pointsUsed > 0 && pointsDiscount === 0) {
+      pointsDiscount = pointsUsed * pointsValue;
+      total = Math.max(0, subtotal + displayedTax - discount - pointsDiscount);
+    }
+  } else {
+    pointsDiscount = pointsUsed * pointsValue;
+    total = Math.max(0, subtotal + displayedTax - discount - pointsDiscount);
+  }
 
   const handlePrintReceipt = async () => {
     if (!trx) return;
@@ -104,28 +139,24 @@ export default function TransactionDetailPage() {
         price: item.price
       })) || [];
 
-      const { pointsValue } = getPointsSettingsForUser(user);
-      const pointsDiscount = (trx.points_used || 0) * pointsValue;
       const finalCustomerPoints = isMemberTransaction
         ? Math.max(0, (trx.customers?.points || 0))
         : 0;
-
-      const total = (trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0) - pointsDiscount;
 
       const showFooter = localStorage.getItem('showFooter') !== 'false';
       const printData = {
         ...trx,
         cashierName: trx.cashier_name,
         items,
-        tax: trx.tax || 0,
+        tax: displayedTax,
         ppnPercentage: 11,
-        discount: trx.discount || 0,
+        discount: discount,
         discountNote: trx.discount_note || '',
-        pointsRedeemed: trx.points_used || 0,
+        pointsRedeemed: pointsUsed,
         pointsDiscount,
         earnedPoints: trx.points_earned || 0,
         finalCustomerPoints,
-        pointsValue,
+        pointsValue: pointsUsed > 0 && pointsDiscount > 0 ? Math.round(pointsDiscount / pointsUsed) : pointsValue,
         customerName: receiptCustomerName,
         customerType: trx.customer_type || (isMemberTransaction ? "member" : "regular"),
         total: total,
@@ -214,10 +245,7 @@ export default function TransactionDetailPage() {
   };
 
 
-  const { enablePoints, pointsValue } = getPointsSettingsForUser(user);
-  const displayedTax = trx.tax || 0;
-  const pointsDiscount = (trx.points_used || 0) * pointsValue;
-  const total = (trx.subtotal || 0) + displayedTax - (trx.discount || 0) - pointsDiscount;
+
 
   const handleDelete = () => {
     if (!confirm(`Hapus transaksi ${formatInvoiceNumber(trx.id)}? Tindakan ini tidak bisa dibatalkan.`)) {

@@ -56,7 +56,7 @@ const getPointsSettingsForUser = (user: any) => {
     return localStorage.getItem(field) || defaultValue;
   };
 
-  const pointsValue = parseInt(getVal('pointsValue', '1000'));
+  const pointsValue = parseInt(getVal('pointsValue', '500'));
   return { pointsValue };
 };
 
@@ -171,12 +171,17 @@ export default function TransactionsPage() {
   };
 
   const calculateTotal = (trx: any) => {
-    const subtotal = trx.subtotal || 0;
-    const tax = trx.tax || 0;
-    const discount = trx.discount || 0;
+    const amountPaid = Number(trx.amount_paid) || 0;
+    const change = Number(trx.change) || 0;
+    if (amountPaid > 0) {
+      return Math.max(0, amountPaid - change);
+    }
+    const subtotal = Number(trx.subtotal) || 0;
+    const tax = Number(trx.tax) || 0;
+    const discount = Number(trx.discount) || 0;
     const pointsValue = getPointsValue();
-    const pointsDiscount = (trx.points_used || 0) * pointsValue;
-    return subtotal + tax - discount - pointsDiscount;
+    const pointsDiscount = (Number(trx.points_used) || 0) * pointsValue;
+    return Math.max(0, subtotal + tax - discount - pointsDiscount);
   };
 
   return (

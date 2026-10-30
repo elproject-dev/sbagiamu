@@ -507,7 +507,7 @@ export function mapApiTransactionsToExport(
   options?: { pointsValue?: number }
 ): Transaction[] {
   const pointsValue =
-    options?.pointsValue ?? parseInt(localStorage.getItem("pointsValue") || "1000", 10);
+    options?.pointsValue ?? parseInt(localStorage.getItem("pointsValue") || "500", 10);
 
   const totalPointsAfterList = calculateTotalPointsAfter(transactions || []);
 
@@ -516,8 +516,24 @@ export function mapApiTransactionsToExport(
     const tax = Number(trx.tax) || 0;
     const discount = Number(trx.discount) || 0;
     const pointsUsed = Number(trx.points_used ?? trx.pointsRedeemed) || 0;
-    const pointsDiscount = pointsUsed * pointsValue;
-    const total = Math.max(0, subtotal + tax - discount - pointsDiscount);
+    const amountPaid = Number(trx.amount_paid ?? trx.amountPaid) || 0;
+    const change = Number(trx.change) || 0;
+
+    let total: number;
+    let pointsDiscount: number;
+    if (amountPaid > 0) {
+      total = Math.max(0, amountPaid - change);
+      pointsDiscount = pointsUsed > 0
+        ? Math.max(0, subtotal + tax - discount - total)
+        : 0;
+      if (pointsUsed > 0 && pointsDiscount === 0) {
+        pointsDiscount = pointsUsed * pointsValue;
+        total = Math.max(0, subtotal + tax - discount - pointsDiscount);
+      }
+    } else {
+      pointsDiscount = pointsUsed * pointsValue;
+      total = Math.max(0, subtotal + tax - discount - pointsDiscount);
+    }
 
     const rawItems = (trx.transaction_items || trx.items || []) as Record<string, unknown>[];
     const customer = trx.customers as { name?: string; membership_type?: string } | null | undefined;

@@ -65,7 +65,19 @@ async function runRelease() {
     // 4. Build APK Release
     console.log('⚙️ Membangun (Build) APK Android...');
     const gradlewCmd = process.platform === 'win32' ? '.\\gradlew' : './gradlew';
-    execSync(`${gradlewCmd} assembleRelease`, { cwd: path.resolve(__dirname, '../android'), stdio: 'inherit' });
+    const macJbrPath = '/Applications/Android Studio.app/Contents/jbr/Contents/Home';
+    const macSdkPath = `${process.env.HOME}/Library/Android/sdk`;
+    const buildEnv = { ...process.env };
+    if (!buildEnv.JAVA_HOME && process.platform === 'darwin' && fs.existsSync(macJbrPath)) {
+      buildEnv.JAVA_HOME = macJbrPath;
+    }
+    if (!buildEnv.ANDROID_HOME && process.platform === 'darwin' && fs.existsSync(macSdkPath)) {
+      buildEnv.ANDROID_HOME = macSdkPath;
+    }
+    if (buildEnv.JAVA_HOME) {
+      buildEnv.PATH = `${buildEnv.JAVA_HOME}/bin:${buildEnv.PATH || ''}`;
+    }
+    execSync(`${gradlewCmd} assembleRelease`, { cwd: path.resolve(__dirname, '../android'), stdio: 'inherit', env: buildEnv });
 
     // 5. Cek apakah APK tersedia
     const apkPath = path.resolve(__dirname, '../android/app/build/outputs/apk/release/app-release.apk');

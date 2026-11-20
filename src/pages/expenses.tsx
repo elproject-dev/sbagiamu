@@ -10,18 +10,75 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Search, Edit, Trash2, Wallet, TrendingDown, SlidersHorizontal, Receipt, User, Store, Calendar, FileDown, Loader2, Image as ImageIcon, Camera, X } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Wallet, TrendingDown, SlidersHorizontal, Receipt, User, Store, Calendar, FileDown, Loader2, Image as ImageIcon, Camera, X, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { applyTenantFilter, withTenantOwner, handleTenantError, isTenantSuperAdmin, getTenantOwnerId } from "@/lib/tenant";
 import { loadSession } from "@/lib/auth";
 import { useListOutlets, useListStaff } from "@/mocks/api-client-react";
-import { uploadExpenseReceipt, deleteExpenseReceipt } from "@/lib/expense-storage";
+import { uploadExpenseReceipt, deleteExpenseReceipt, MAX_INPUT_FILE_SIZE, MAX_INPUT_FILE_SIZE_LABEL } from "@/lib/expense-storage";
 import * as XLSX from "xlsx-js-style";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { Capacitor } from "@capacitor/core";
 import { isTauri, tauriSaveFile } from "@/lib/tauri-file";
 import { useCountUp } from "@/hooks/useCountUp";
+
+
+export interface ExpenseItem {
+  name: string;
+  qty: number;
+  price: number;
+  total: number;
+}
+
+export interface ParsedExpenseDetails {
+  summary: string;
+  items: ExpenseItem[];
+  hasItems: boolean;
+}
+
+export function parseExpenseDescription(rawDescription: string): ParsedExpenseDetails {
+  if (!rawDescription) {
+    return { summary: "", items: [], hasItems: false };
+  }
+  const trimmed = rawDescription.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+        return {
+          summary: parsed.summary || "",
+          items: parsed.items.map((it: any) => ({
+            name: String(it.name || ""),
+            qty: Number(it.qty) > 0 ? Number(it.qty) : 1,
+            price: Number(it.price) || 0,
+            total: Number(it.total) || (Number(it.qty) || 1) * (Number(it.price) || 0)
+          })),
+          hasItems: true
+        };
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  return {
+    summary: rawDescription,
+    items: [],
+    hasItems: false
+  };
+}
+
+export function getExpenseDisplayText(rawDescription: string): string {
+  const details = parseExpenseDescription(rawDescription);
+  if (!details.hasItems) {
+    return rawDescription;
+  }
+  if (details.summary) {
+    return details.summary;
+  }
+  return details.items.map(it => `${it.name} (${it.qty}x)`).join(", ");
+}
 
 interface Expense {
   id: number;
@@ -128,6 +185,50 @@ export default function ExpensesPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [viewImageUrl, setViewImageUrl] = useState<string | null>(null);
+  const [selectedExpenseForDetail, setSelectedExpenseForDetail] = useState<Expense | null>(null);
+  const [formItems, setFormItems] = useState<{ name: string; qty: string | number; price: string | number }[]>([
+    { name: "", qty: 1, price: "" }
+  ]);
+
+  const handleItemChange = (index: number, field: "name" | "qty" | "price", value: string) => {
+    setFormItems(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+
+      const total = updated.reduce((sum, it) => {
+        const q = parseInt(String(it.qty), 10) || 0;
+        const p = parseFloat(parseFormattedNumber(String(it.price))) || 0;
+        return sum + (q * p);
+      }, 0);
+
+      if (total > 0) {
+        setFormData(f => ({ ...f, amount: total.toString() }));
+      }
+      return updated;
+    });
+  };
+
+  const handleAddItem = () => {
+    setFormItems(prev => [...prev, { name: "", qty: 1, price: "" }]);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    if (formItems.length <= 1) {
+      setFormItems([{ name: "", qty: 1, price: "" }]);
+      return;
+    }
+    setFormItems(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      const total = updated.reduce((sum, it) => {
+        const q = parseInt(String(it.qty), 10) || 0;
+        const p = parseFloat(parseFormattedNumber(String(it.price))) || 0;
+        return sum + (q * p);
+      }, 0);
+      setFormData(f => ({ ...f, amount: total > 0 ? total.toString() : "" }));
+      return updated;
+    });
+  };
+
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("id-ID").format(num);
@@ -435,14 +536,36 @@ export default function ExpensesPage() {
     setImagePreview(null);
     if (expense) {
       setEditingExpense(expense);
-      setFormData({
-        category: expense.category,
-        description: expense.description,
-        supplier: expense.supplier || "",
-        amount: expense.amount.toString(),
-        date: expense.date,
-        image_url: expense.image_url || "",
-      });
+      const parsed = parseExpenseDescription(expense.description);
+      if (parsed.hasItems) {
+        setFormData({
+          category: expense.category,
+          description: parsed.summary,
+          supplier: expense.supplier || "",
+          amount: expense.amount.toString(),
+          date: expense.date,
+          image_url: expense.image_url || "",
+        });
+        setFormItems(parsed.items.map(it => ({
+          name: it.name,
+          qty: it.qty,
+          price: it.price.toString()
+        })));
+      } else {
+        setFormData({
+          category: expense.category,
+          description: expense.description,
+          supplier: expense.supplier || "",
+          amount: expense.amount.toString(),
+          date: expense.date,
+          image_url: expense.image_url || "",
+        });
+        setFormItems([{
+          name: expense.description,
+          qty: 1,
+          price: expense.amount.toString()
+        }]);
+      }
       if (expense.image_url) {
         setImagePreview(expense.image_url);
       }
@@ -456,6 +579,7 @@ export default function ExpensesPage() {
         date: new Date().toISOString().split("T")[0],
         image_url: "",
       });
+      setFormItems([{ name: "", qty: 1, price: "" }]);
     }
     setIsDialogOpen(true);
   };
@@ -464,8 +588,8 @@ export default function ExpensesPage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
-      if (file.size > 1 * 1024 * 1024) {
-        toast({ title: "Error", description: "Ukuran file maksimal 1MB", variant: "destructive" });
+      if (file.size > MAX_INPUT_FILE_SIZE) {
+        toast({ title: "Error", description: `Ukuran file maksimal ${MAX_INPUT_FILE_SIZE_LABEL}`, variant: "destructive" });
         e.target.value = '';
         return;
       }
@@ -487,8 +611,35 @@ export default function ExpensesPage() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.category || !formData.description || !formData.amount) {
-      toast({ title: "Error", description: "Kategori, deskripsi, dan jumlah wajib diisi", variant: "destructive" });
+    const validItems = formItems
+      .filter(it => it.name.trim() !== "")
+      .map(it => {
+        const qty = Math.max(1, parseInt(String(it.qty), 10) || 1);
+        const price = parseFloat(parseFormattedNumber(String(it.price))) || 0;
+        return {
+          name: it.name.trim(),
+          qty,
+          price,
+          total: qty * price
+        };
+      });
+
+    let finalDescription = formData.description.trim();
+    let finalAmount = parseFloat(formData.amount) || 0;
+
+    if (validItems.length > 0) {
+      const itemsSum = validItems.reduce((acc, i) => acc + i.total, 0);
+      finalDescription = JSON.stringify({
+        summary: formData.description.trim() || validItems.map(i => i.name).join(", "),
+        items: validItems
+      });
+      if (itemsSum > 0) {
+        finalAmount = itemsSum;
+      }
+    }
+
+    if (!formData.category || (!finalDescription && validItems.length === 0) || !finalAmount) {
+      toast({ title: "Error", description: "Kategori, rincian barang/deskripsi, dan jumlah wajib diisi", variant: "destructive" });
       return;
     }
 
@@ -514,9 +665,9 @@ export default function ExpensesPage() {
 
       const payload = withTenantOwner({
         category: formData.category,
-        description: formData.description,
+        description: finalDescription,
         supplier: formData.supplier,
-        amount: parseFloat(formData.amount),
+        amount: finalAmount,
         date: formData.date,
         image_url: finalImageUrl || null,
         outlet_id: currentOutletId || undefined,
@@ -615,7 +766,14 @@ export default function ExpensesPage() {
           "No": index + 1,
           "Tanggal": formatDate(exp.date),
           "Kategori": getCategoryLabel(exp.category),
-          "Deskripsi": exp.description,
+          "Deskripsi": (() => {
+            const parsed = parseExpenseDescription(exp.description);
+            if (parsed.hasItems) {
+              const itemsList = parsed.items.map(it => `${it.name} (${it.qty}x ${formatNumber(it.price)})`).join(", ");
+              return parsed.summary ? `${parsed.summary}: ${itemsList}` : itemsList;
+            }
+            return exp.description;
+          })(),
           "Suplier": exp.supplier || "-",
           "Staff": staffName,
           "Outlet": outletName,
@@ -1141,7 +1299,11 @@ export default function ExpensesPage() {
               filteredExpenses.map((expense) => {
                 const staffName = getStaffNameDisplay(expense.owner_id);
                 return (
-                  <div key={expense.id} className="bg-white dark:bg-slate-800 rounded-none border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex flex-col gap-3">
+                  <div
+                    key={expense.id}
+                    onClick={() => setSelectedExpenseForDetail(expense)}
+                    className="bg-white dark:bg-slate-800 rounded-none border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex flex-col gap-3 cursor-pointer hover:border-primary/50 transition-colors"
+                  >
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <div className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
                         {formatDate(expense.date)}
@@ -1153,9 +1315,22 @@ export default function ExpensesPage() {
 
                     <div className="flex items-start justify-between gap-3">
                       <div className="text-sm text-slate-700 dark:text-slate-300 font-medium break-words flex-1">
-                        <div>{expense.description}</div>
+                        {(() => {
+                          const parsed = parseExpenseDescription(expense.description);
+                          if (parsed.hasItems) {
+                            return (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold text-slate-900 dark:text-white">{parsed.summary || parsed.items.map(it => it.name).join(", ")}</span>
+                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-slate-100 dark:bg-slate-700 font-normal shrink-0">
+                                  {parsed.items.length} item
+                                </Badge>
+                              </div>
+                            );
+                          }
+                          return <div>{expense.description}</div>;
+                        })()}
                         {expense.supplier && (
-                          <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                          <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
                             <Store className="w-3 h-3" />
                             Suplier: {expense.supplier}
                           </div>
@@ -1235,7 +1410,7 @@ export default function ExpensesPage() {
                   <TableHead className="font-semibold">Staff</TableHead>
                   {isAdmin && <TableHead className="font-semibold">Outlet</TableHead>}
                   <TableHead className="text-right font-semibold">Jumlah</TableHead>
-                  {isAdmin && <TableHead className="text-right w-28 font-semibold">Aksi</TableHead>}
+                  <TableHead className="text-right w-28 font-semibold">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1268,7 +1443,11 @@ export default function ExpensesPage() {
                   </TableRow>
                 ) : (
                   filteredExpenses.map((expense, index) => (
-                    <TableRow key={expense.id} className="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm relative hover:z-10 transition-all duration-200 cursor-pointer">
+                    <TableRow
+                      key={expense.id}
+                      onClick={() => setSelectedExpenseForDetail(expense)}
+                      className="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm relative hover:z-10 transition-all duration-200 cursor-pointer"
+                    >
                       <TableCell className="text-slate-400 font-medium">{index + 1}</TableCell>
                       <TableCell className="text-slate-600 dark:text-slate-400">
                         {formatDate(expense.date)}
@@ -1282,8 +1461,21 @@ export default function ExpensesPage() {
                           {getCategoryLabel(expense.category)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-slate-900 dark:text-white font-medium max-w-[200px] truncate">
-                        {expense.description}
+                      <TableCell className="text-slate-900 dark:text-white font-medium max-w-[220px]">
+                        {(() => {
+                          const parsed = parseExpenseDescription(expense.description);
+                          if (parsed.hasItems) {
+                            return (
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className="truncate">{parsed.summary || parsed.items.map(it => it.name).join(", ")}</span>
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-slate-50 dark:bg-slate-700 font-normal shrink-0">
+                                  {parsed.items.length} item
+                                </Badge>
+                              </div>
+                            );
+                          }
+                          return <span className="truncate block">{expense.description}</span>;
+                        })()}
                       </TableCell>
                       <TableCell className="text-center">
                         {expense.image_url ? (
@@ -1316,28 +1508,41 @@ export default function ExpensesPage() {
                       <TableCell className="text-right font-bold text-red-600 dark:text-red-400">
                         {formatCurrency(expense.amount)}
                       </TableCell>
-                      {isAdmin && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDialog(expense)}
-                              className="h-8 w-8 sm:h-9 sm:w-9"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(expense.id)}
-                              className="h-8 w-8 sm:h-9 sm:w-9 text-red-500 hover:text-red-600 dark:hover:text-red-400"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSelectedExpenseForDetail(expense)}
+                            className="h-8 w-8 sm:h-9 sm:w-9 text-slate-500 hover:text-primary dark:hover:text-primary"
+                            title="Lihat Rincian"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenDialog(expense)}
+                                className="h-8 w-8 sm:h-9 sm:w-9"
+                                title="Edit"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(expense.id)}
+                                className="h-8 w-8 sm:h-9 sm:w-9 text-red-500 hover:text-red-600 dark:hover:text-red-400"
+                                title="Hapus"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -1349,7 +1554,7 @@ export default function ExpensesPage() {
 
       {/* Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <DialogHeader>
             <DialogTitle>
               {editingExpense ? "Edit Pengeluaran" : "Tambah Pengeluaran Baru"}
@@ -1375,37 +1580,171 @@ export default function ExpensesPage() {
               </Select>
             </div>
 
+            {/* Catatan / Keterangan Umum (Opsional) */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">Deskripsi</Label>
+              <Label htmlFor="description" className="text-sm font-medium flex justify-between">
+                <span>Catatan / Keterangan Umum</span>
+                <span className="text-xs text-slate-400 font-normal">(Opsional)</span>
+              </Label>
               <Input
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Contoh: Beli ATK, Bayar listrik"
-                className="h-11"
+                placeholder="Masukkan Keterangan..."
+                className="h-10 text-sm"
               />
             </div>
 
+            {/* Rincian Item Belanja */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                  <Receipt className="w-4 h-4 text-primary" />
+                  Rincian Item Belanja
+                </Label>
+                <span className="text-xs text-slate-400">Sesuai struk / nota</span>
+              </div>
+
+              <div className="space-y-2 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 sm:p-3 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="hidden sm:grid sm:grid-cols-[1fr_4.5rem_7rem_6rem_2rem] gap-2 text-[11px] font-semibold text-slate-500 uppercase px-1">
+                  <span>Nama Barang</span>
+                  <span className="text-center">Qty</span>
+                  <span className="text-right">Harga Satuan</span>
+                  <span className="text-right">Subtotal</span>
+                  <span></span>
+                </div>
+
+                <div className="space-y-2">
+                  {formItems.map((item, idx) => {
+                    const itemQty = parseInt(String(item.qty), 10) || 0;
+                    const itemPrice = parseFloat(parseFormattedNumber(String(item.price))) || 0;
+                    const itemSubtotal = itemQty * itemPrice;
+
+                    return (
+                      <div key={idx} className="flex flex-col sm:grid sm:grid-cols-[1fr_4.5rem_7rem_6rem_2rem] gap-2 items-center bg-white dark:bg-slate-800 p-2 sm:p-1.5 rounded border border-slate-200 dark:border-slate-700">
+                        {/* Nama Barang */}
+                        <div className="w-full">
+                          <span className="sm:hidden text-[10px] text-slate-400 font-medium block mb-1">Nama Barang:</span>
+                          <Input
+                            placeholder="Nama barang"
+                            value={item.name}
+                            onChange={(e) => handleItemChange(idx, "name", e.target.value)}
+                            className="h-9 text-xs"
+                          />
+                        </div>
+
+                        {/* Qty */}
+                        <div className="w-full flex items-center gap-2 sm:block">
+                          <span className="sm:hidden text-[10px] text-slate-400 font-medium w-16">Qty:</span>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={item.qty}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, "");
+                              handleItemChange(idx, "qty", val);
+                            }}
+                            className="h-9 text-xs text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            placeholder="0"
+                          />
+                        </div>
+
+                        {/* Harga Satuan */}
+                        <div className="w-full flex items-center gap-2 sm:block">
+                          <span className="sm:hidden text-[10px] text-slate-400 font-medium w-16">Harga:</span>
+                          <Input
+                            placeholder="0"
+                            value={item.price === "" ? "" : formatNumber(parseFloat(parseFormattedNumber(String(item.price))) || 0)}
+                            onChange={(e) => {
+                              const raw = parseFormattedNumber(e.target.value);
+                              if (raw === "" || /^\d+$/.test(raw)) {
+                                handleItemChange(idx, "price", raw);
+                              }
+                            }}
+                            className="h-9 text-xs text-right"
+                          />
+                        </div>
+
+                        {/* Subtotal */}
+                        <div className="w-full flex justify-between sm:justify-end items-center px-1">
+                          <span className="sm:hidden text-[10px] text-slate-400 font-medium">Subtotal:</span>
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            {formatCurrency(itemSubtotal)}
+                          </span>
+                        </div>
+
+                        {/* Hapus */}
+                        <div className="w-full sm:w-auto flex justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveItem(idx)}
+                            disabled={formItems.length === 1}
+                            className="h-7 w-7 text-slate-400 hover:text-red-500"
+                            title="Hapus baris"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddItem}
+                    className="h-8 text-xs gap-1 border-dashed"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Tambah Item
+                  </Button>
+
+                  <div className="text-right">
+                    <span className="text-[11px] text-slate-500 mr-2">Total Rincian:</span>
+                    <span className="text-sm font-bold text-red-600 dark:text-red-400">
+                      {formatCurrency(
+                        formItems.reduce((sum, it) => {
+                          const q = parseInt(String(it.qty), 10) || 0;
+                          const p = parseFloat(parseFormattedNumber(String(it.price))) || 0;
+                          return sum + (q * p);
+                        }, 0)
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="supplier" className="text-sm font-medium">Suplier (Opsional)</Label>
+              <Label htmlFor="supplier" className="text-sm font-medium flex justify-between">
+                <span>Suplier / Nama Toko</span>
+                <span className="text-xs text-slate-400 font-normal">(Opsional)</span>
+              </Label>
               <Input
                 id="supplier"
                 value={formData.supplier}
                 onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                placeholder="Nama suplier atau toko"
-                className="h-11"
+                placeholder="Nama suplier atau toko struk"
+                className="h-10 text-sm"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-sm font-medium">Jumlah (Rp)</Label>
+              <Label htmlFor="amount" className="text-sm font-medium flex justify-between">
+                <span>Total Pengeluaran (Rp)</span>
+                <span className="text-xs text-slate-400 font-normal">Otomatis dari rincian item</span>
+              </Label>
               <Input
                 id="amount"
                 type="text"
                 value={getFormattedAmount()}
                 onChange={handleAmountChange}
                 placeholder="0"
-                className="h-11 text-lg"
+                className="h-11 text-lg font-bold text-red-600 dark:text-red-400"
               />
             </div>
 
@@ -1461,13 +1800,13 @@ export default function ExpensesPage() {
                             id="receipt-upload"
                             name="receipt-upload"
                             type="file"
-                            accept="image/jpeg,image/png,image/webp"
+                            accept="image/*"
                             className="sr-only"
                             onChange={handleImageChange}
                           />
                         </label>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">PNG, JPG up to 1MB</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">PNG, JPG, WebP hingga {MAX_INPUT_FILE_SIZE_LABEL}</p>
                     </>
                   )}
                 </div>
@@ -1634,6 +1973,193 @@ export default function ExpensesPage() {
             >
               Batal
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Detail Expense Dialog (Pop Up Rincian Item) */}
+      <Dialog open={!!selectedExpenseForDetail} onOpenChange={(open) => !open && setSelectedExpenseForDetail(null)}>
+        <DialogContent className="max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <DialogHeader className="pb-2 border-b border-slate-100 dark:border-slate-800">
+            <DialogTitle className="sr-only">Detail Pengeluaran</DialogTitle>
+            <DialogDescription className="sr-only">Rincian transaksi & foto bukti struk</DialogDescription>
+            <div className="flex items-center justify-between pr-6">
+              {selectedExpenseForDetail && (
+                <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getCategoryColor(selectedExpenseForDetail.category)}`}>
+                  {getCategoryLabel(selectedExpenseForDetail.category)}
+                </span>
+              )}
+            </div>
+          </DialogHeader>
+
+          {selectedExpenseForDetail && (() => {
+            const exp = selectedExpenseForDetail;
+            const parsed = parseExpenseDescription(exp.description);
+            const staffName = getStaffNameDisplay(exp.owner_id);
+            const outletName = outlets?.find(o => o.id === exp.outlet_id)?.name || "Semua Outlet";
+
+            return (
+              <div className="space-y-3.5 py-1">
+                {/* Info Metadata Card */}
+                <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-200/80 dark:border-slate-700/80 space-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                    {/* Kiri: Tanggal */}
+                    <div>
+                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Tanggal</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-0.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        {formatDate(exp.date)}
+                      </span>
+                    </div>
+
+                    {/* Kanan: Staff Kasir */}
+                    <div className="text-right flex flex-col items-end">
+                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Staff Kasir</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5 truncate block">
+                        {staffName}
+                      </span>
+                    </div>
+
+                    {/* Kiri: Suplier / Toko */}
+                    <div>
+                      {exp.supplier ? (
+                        <>
+                          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Suplier / Toko</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-0.5">
+                            <Store className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="truncate">{exp.supplier}</span>
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+
+                    {/* Kanan: Outlet */}
+                    {isAdmin && (
+                      <div className="text-right flex flex-col items-end">
+                        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Outlet</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5 truncate block">
+                          {outletName}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {parsed.summary && (
+                    <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Keterangan / Catatan</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200 mt-0.5 block leading-relaxed">{parsed.summary}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tabel Rincian Item Belanja */}
+                {parsed.hasItems ? (
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
+                    <div className="bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                      <span className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <Receipt className="w-3.5 h-3.5 text-primary" /> Rincian Item Struk
+                      </span>
+                      <span className="text-[10px] bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full font-semibold">
+                        {parsed.items.length} item
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-[11px] text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-800">
+                          <tr>
+                            <th className="py-2.5 pl-3 pr-1 text-left w-7">No</th>
+                            <th className="py-2.5 px-2 text-left">Nama Item</th>
+                            <th className="py-2.5 px-2 text-center w-10">Qty</th>
+                            <th className="py-2.5 px-2 text-right">Harga</th>
+                            <th className="py-2.5 pl-2 pr-3 text-right">Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-[11px] sm:text-xs">
+                          {parsed.items.map((it, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                              <td className="py-2 pl-3 pr-1 text-slate-400 font-sans">{idx + 1}</td>
+                              <td className="py-2 px-2 font-medium font-sans text-slate-800 dark:text-slate-200 break-words">{it.name}</td>
+                              <td className="py-2 px-2 text-center text-slate-600 dark:text-slate-400">{it.qty}</td>
+                              <td className="py-2 px-2 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap">{formatCurrency(it.price)}</td>
+                              <td className="py-2 pl-2 pr-3 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">{formatCurrency(it.total)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Total Section */}
+                    <div className="bg-slate-50/80 dark:bg-slate-800/80 px-3.5 py-2.5 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                      <span className="font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400">Total Pengeluaran</span>
+                      <span className="font-extrabold text-base sm:text-lg text-red-600 dark:text-red-400 font-mono">{formatCurrency(exp.amount)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Deskripsi Pengeluaran</span>
+                    <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">{exp.description}</p>
+                    <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                      <span className="font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400">Total Pengeluaran</span>
+                      <span className="font-extrabold text-base text-red-600 dark:text-red-400 font-mono">{formatCurrency(exp.amount)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Foto Bukti Struk */}
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-primary" /> Foto Bukti Struk
+                    </span>
+                    {exp.image_url && (
+                      <span className="text-[10px] text-slate-400 font-normal">Klik foto untuk perbesar</span>
+                    )}
+                  </div>
+                  {exp.image_url ? (
+                    <div
+                      className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer group bg-slate-950 flex justify-center items-center p-2"
+                      onClick={() => setViewImageUrl(exp.image_url || null)}
+                      title="Klik untuk melihat ukuran penuh"
+                    >
+                      <img
+                        src={exp.image_url}
+                        alt="Bukti Struk"
+                        className="max-h-56 sm:max-h-64 w-auto object-contain rounded transition-transform group-hover:scale-[1.02]"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-medium gap-1.5 rounded-xl">
+                        <Eye className="w-4 h-4" /> Perbesar Foto
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">
+                      Tidak ada foto bukti struk yang diunggah
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          <DialogFooter className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <Button variant="outline" className="h-10 text-xs font-medium" onClick={() => setSelectedExpenseForDetail(null)}>
+              Tutup
+            </Button>
+            {isAdmin && selectedExpenseForDetail ? (
+              <Button
+                onClick={() => {
+                  const target = selectedExpenseForDetail;
+                  setSelectedExpenseForDetail(null);
+                  handleOpenDialog(target);
+                }}
+                className="h-10 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90"
+              >
+                <Edit className="w-3.5 h-3.5" /> Edit Pengeluaran
+              </Button>
+            ) : (
+              <div />
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

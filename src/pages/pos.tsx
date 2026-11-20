@@ -236,7 +236,7 @@ export default function POSPage() {
 
   const { data: outlets } = useListOutlets();
 
-  const { data: products, isLoading: isLoadingProducts } = useListProducts({
+  const { data: rawProducts, isLoading: isLoadingProducts } = useListProducts({
     search: search.length > 2 ? search : undefined,
     // Abaikan categoryId saat ada input pencarian (search >= 3 karakter)
     // Sehingga pencarian tetap bekerja meski kasir masih dalam mode kategori
@@ -245,6 +245,14 @@ export default function POSPage() {
     outletId: selectedOutlet,
     includeShared: true
   });
+
+  // Selalu urutkan daftar produk berdasarkan abjad A-Z
+  const products = useMemo(() => {
+    if (!rawProducts) return undefined;
+    return [...rawProducts].sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base", numeric: true })
+    );
+  }, [rawProducts]);
   const { data: categories } = useListCategories({ outletId: selectedOutlet });
   const { data: customers, isLoading: isLoadingCustomers, refetch: refetchCustomers } = useListCustomers();
   const { data: allPointsSettings, refetch: refetchPointsSettings } = useListPointsSettings();
@@ -1668,140 +1676,98 @@ export default function POSPage() {
 
           {/* Scrollable Content - Hidden Scrollbar */}
           <div className="flex-1 overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="bg-slate-100 dark:bg-slate-900 rounded-lg p-4 space-y-2 font-mono text-sm">
-              {/* Header - Store Name Centered */}
-              <div className="text-center mb-3">
-                <p className="font-bold text-base text-slate-900 dark:text-slate-100">
-                  {localStorage.getItem('storeName') || 'SBAGIAMU'}
-                </p>
-                {(() => {
-                  const address = localStorage.getItem('storeAddress');
-                  return address && typeof address === 'string' && address.trim() ? (
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      {address}
-                    </p>
-                  ) : null;
-                })()}
-              </div>
+            {(() => {
+              // Preview disamakan 1:1 dengan urutan hasil cetak (lihat formatReceipt di bluetooth-printer.ts)
+              const tx: any = lastTransaction || {};
+              const activeOutletObj = outlets?.find(o => o.id.toString() === selectedOutlet);
+              const showFooter = localStorage.getItem('showFooter') !== 'false';
+              const outletLabel = activeOutletObj?.name || tx.outletName || tx.storeName || 'Global';
+              const footer1 = showFooter ? (activeOutletObj?.footer_message || localStorage.getItem('footerMessage') || 'Terima kasih atas kunjungan Anda') : '';
+              const footer2 = showFooter ? (activeOutletObj?.footer_message2 || localStorage.getItem('footerMessage2') || 'Real Brew, Real Bean, Real Coffee') : '';
+              const footer3 = showFooter ? (activeOutletObj?.footer_message3 || localStorage.getItem('footerMessage3') || 'Powered by Tembus Digital') : '';
 
-              <div className="border-t border-dashed border-slate-200 dark:border-slate-700 pt-2 mb-2 space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">No.ID</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300 font-mono">
-                    {lastTransaction?.id ? formatInvoiceNumber(lastTransaction.id) : "INV-"}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Waktu</span>
-                  <div className="text-right">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">
-                      {lastTransaction?.createdAt ? new Date(lastTransaction.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} ,
-                      {lastTransaction?.createdAt ? new Date(lastTransaction.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-                {lastTransaction?.orderType && lastTransaction.orderType !== 'belum_dipilih' && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400">Pesanan</span>
-                    <span className="font-medium text-slate-700 dark:text-slate-300">
-                      {lastTransaction.orderType === 'dine_in' ? 'Dine In' : lastTransaction.orderType === 'take_away' ? 'Take Away' : lastTransaction.orderType}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Pelanggan</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {lastTransaction?.customerType === 'member' && lastTransaction?.customerName ? `Member - ${lastTransaction.customerName}` : 'Umum'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Kasir</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {lastTransaction?.cashier_name || lastTransaction?.cashierName || cashierName || 'Admin Kasir'}
-                  </span>
-                </div>
-              </div>
+              const d = tx.createdAt ? new Date(tx.createdAt) : new Date();
+              const monthsId = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+              const waktuStr = `${String(d.getDate()).padStart(2, '0')} ${monthsId[d.getMonth()]} ${d.getFullYear()} ,${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+              const fmt = (n: number) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
+              const isMember = tx.customerType === 'member';
 
-              <div className="border-t border-dashed border-slate-200 dark:border-slate-700 pt-2 mb-2 space-y-1">
-                {lastTransaction?.items?.map((item: any, idx: number) => (
-                  <div key={idx} className="flex justify-between text-xs">
-                    <div className="flex-1">
-                      <p className="text-slate-900 dark:text-slate-100">{item.productName}</p>
-                      <p className="text-slate-400 dark:text-slate-500">{item.quantity} x {formatRupiah(item.price)}</p>
+              const Row = ({ label, value, className = '' }: { label: any; value: any; className?: string }) => (
+                <div className={`flex justify-between gap-2 ${className}`}>
+                  <span>{label}</span>
+                  <span className="text-right">{value}</span>
+                </div>
+              );
+
+              return (
+                <div className="bg-white dark:bg-slate-900 rounded-lg p-4 font-mono text-xs text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 leading-relaxed">
+                  {/* Logo (sama seperti cetakan) */}
+                  <div className="flex justify-center mb-1">
+                    <img src={`${import.meta.env.BASE_URL}sbagiamu.png`} alt="Logo" className="h-16 w-16 object-contain dark:invert" />
+                  </div>
+
+                  <div className="border-t-2 border-double border-slate-400 dark:border-slate-500 my-1" />
+
+                  {/* Info transaksi */}
+                  <Row label="No.ID" value={tx.id ? formatInvoiceNumber(tx.id) : '-'} />
+                  <Row label="Waktu" value={waktuStr} />
+                  <Row label="Outlet" value={outletLabel} />
+                  {tx.orderType && tx.orderType !== 'belum_dipilih' && (
+                    <Row label="Pesanan" value={tx.orderType === 'dine_in' ? 'Dine In' : tx.orderType === 'take_away' ? 'Take Away' : tx.orderType} />
+                  )}
+                  <Row label="Pelanggan" value={isMember && tx.customerName ? `Member - ${tx.customerName}` : 'Umum'} />
+                  <Row label="Kasir" value={tx.cashier_name || tx.cashierName || cashierName || 'Admin Kasir'} />
+
+                  <div className="border-t border-dashed border-slate-400 dark:border-slate-500 my-1" />
+
+                  {/* Item: Qty  Nama  Harga  Total (satu baris seperti cetakan) */}
+                  {tx.items?.map((item: any, idx: number) => (
+                    <div key={idx} className="grid grid-cols-[1.75rem_1fr_auto_4.5rem] gap-1 items-start">
+                      <span>{item.quantity}</span>
+                      <span className="break-words">{item.productName}</span>
+                      <span className="text-right">{fmt(item.price)}</span>
+                      <span className="text-right">{fmt((item.quantity || 0) * (item.price || 0))}</span>
                     </div>
-                    <p className="font-bold text-slate-900 dark:text-slate-100">{formatRupiah(item.quantity * item.price)}</p>
-                  </div>
-                ))}
-              </div>
+                  ))}
 
-              <div className="border-t border-dashed border-slate-200 dark:border-slate-700 pt-2 space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Subtotal</span>
-                  <span className="text-slate-700 dark:text-slate-300">{formatRupiah(lastTransaction?.subtotal || 0)}</span>
+                  <div className="border-t border-dashed border-slate-400 dark:border-slate-500 my-1" />
+
+                  {/* Ringkasan */}
+                  <Row label="Subtotal" value={fmt(tx.subtotal)} />
+                  {(tx.tax || 0) > 0 && <Row label={`Pajak (${tx.ppnPercentage || 11}%)`} value={fmt(tx.tax)} />}
+                  {(tx.discount || 0) > 0 && <Row label="Diskon" value={fmt(tx.discount)} />}
+                  {(tx.pointsDiscount || 0) > 0 && <Row label={`Poin digunakan -${tx.pointsRedeemed || 0}`} value={fmt(tx.pointsDiscount)} />}
+                  <Row label="TOTAL" value={fmt(tx.total)} className="font-bold text-sm" />
+
+                  <div className="h-3" />
+
+                  {/* Pembayaran */}
+                  {tx.paymentMethod === 'cash' && (
+                    <>
+                      <Row label="Bayar" value={fmt(tx.amountPaid)} />
+                      <Row label="Kembali" value={fmt(tx.change)} />
+                    </>
+                  )}
+                  <Row label="Metode Pembayaran" value={getPaymentMethodLabel(tx.paymentMethod || '')} />
+
+                  {isMember && (
+                    <>
+                      {(tx.earnedPoints || 0) > 0 && <Row label="Poin" value={`+${tx.earnedPoints}`} />}
+                      <Row label="Total Poin" value={`${tx.finalCustomerPoints ?? 0}`} />
+                    </>
+                  )}
+
+                  <div className="border-t border-dashed border-slate-400 dark:border-slate-500 my-1" />
+
+                  {/* Footer */}
+                  <div className="text-center">
+                    {footer1 && <p>{footer1}</p>}
+                    {footer2 && <p>{footer2}</p>}
+                    {footer3 && <p className="mt-3">{footer3}</p>}
+                  </div>
                 </div>
-                {lastTransaction?.enablePPN && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400">Pajak ({lastTransaction?.ppnPercentage || 11}%)</span>
-                    <span className="text-slate-700 dark:text-slate-300">{formatRupiah(lastTransaction?.tax || 0)}</span>
-                  </div>
-                )}
-                {(lastTransaction?.discount || 0) > 0 && (
-                  <div className="flex justify-between text-xs text-red-600 dark:text-red-400">
-                    <span>Diskon {lastTransaction?.discountNote && `(${lastTransaction.discountNote})`}</span>
-                    <span>-{formatRupiah(lastTransaction?.discount || 0)}</span>
-                  </div>
-                )}
-                {(lastTransaction?.pointsDiscount || 0) > 0 && (
-                  <div className="flex justify-between text-xs text-amber-600 dark:text-amber-400">
-                    <span>Poin digunakan -{lastTransaction?.pointsRedeemed || 0}</span>
-                    <span>-{formatRupiah(lastTransaction?.pointsDiscount || 0)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between font-bold text-base pt-2">
-                  <span className="text-slate-700 dark:text-slate-200">TOTAL</span>
-                  <span className="text-slate-900 dark:text-slate-100">{formatRupiah(lastTransaction?.total || 0)}</span>
-                </div>
-
-                {lastTransaction?.paymentMethod === 'cash' && (
-                  <>
-                    <div className="flex justify-between text-xs pt-2">
-                      <span className="text-slate-500 dark:text-slate-400">Bayar</span>
-                      <span className="text-slate-700 dark:text-slate-300">{formatRupiah(lastTransaction?.amountPaid || 0)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      <span>Kembali</span>
-                      <span>{formatRupiah(lastTransaction?.change || 0)}</span>
-                    </div>
-                  </>
-                )}
-
-                <div className="flex justify-between text-xs pt-1">
-                  <span className="text-slate-600 dark:text-slate-400">Metode Pembayaran</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{getPaymentMethodLabel(lastTransaction?.paymentMethod || '')}</span>
-                </div>
-
-                {lastTransaction?.customerType === "member" && (
-                  <>
-                    {(lastTransaction?.earnedPoints || 0) > 0 && (
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-500 dark:text-slate-400">Poin</span>
-                        <span className="font-bold text-amber-600 dark:text-amber-400">
-                          +{(lastTransaction?.earnedPoints || 0).toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                    )}
-                    {((lastTransaction?.finalCustomerPoints || 0) > 0 || (lastTransaction?.earnedPoints || 0) > 0 || (lastTransaction?.pointsRedeemed || 0) > 0) && (
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-500 dark:text-slate-400">Total Poin</span>
-                        <span className="font-bold text-amber-600 dark:text-amber-400">
-                          {(lastTransaction?.finalCustomerPoints || 0).toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+              );
+            })()}
 
             <DialogFooter className="sm:justify-center gap-2">
               <Button

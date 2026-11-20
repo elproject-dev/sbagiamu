@@ -1516,8 +1516,31 @@ export const getListCategoriesQueryKey = () => ['categories'];
 
 // ============== CUSTOMERS WITH REALTIME (SHARED DATA) ==============
 export const useListCustomers = () => {
+  const queryClient = useQueryClient();
+
+  // Realtime: pelanggan/member baru (mis. daftar lewat web) langsung terbaca tanpa refresh
+  useEffect(() => {
+    const channel = supabase
+      .channel(`customers_realtime_${Math.random().toString(36).substring(2, 9)}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'customers' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['customers'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['customers'],
+    // Cadangan jika koneksi realtime terputus
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
     queryFn: async () => {
       const { data: customers, error } = await supabase
         .from('customers')

@@ -15,7 +15,7 @@ export default defineConfig({
       devOptions: {
         enabled: true,
       },
-      includeAssets: ['favicon.svg', 'pwa-icon.png', 'pwa-icon-maskable.png'],
+      includeAssets: ['favicon.svg', 'favicon.ico', 'favicon.png', 'pwa-icon.png', 'pwa-icon-maskable.png'],
       manifest: {
         name: 'SBAGIAMU POS',
         short_name: 'SBAGIAMU',

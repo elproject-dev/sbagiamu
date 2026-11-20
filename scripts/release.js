@@ -80,7 +80,7 @@ async function runRelease() {
     if (!buildEnv.ANDROID_HOME && process.platform === 'darwin' && fs.existsSync(macSdkPath)) {
       buildEnv.ANDROID_HOME = macSdkPath;
     }
-    execSync(`${gradlewCmd} assembleRelease`, { cwd: path.resolve(__dirname, '../android'), stdio: 'inherit', env: buildEnv });
+    execSync(`${gradlewCmd} clean assembleRelease`, { cwd: path.resolve(__dirname, '../android'), stdio: 'inherit', env: buildEnv });
 
     // 5. Cek apakah APK tersedia
     const apkPath = path.resolve(__dirname, '../android/app/build/outputs/apk/release/app-release.apk');

@@ -56,8 +56,11 @@ async function runRelease() {
 
     // 3. Build Web dan Sinkronisasi Capacitor
     console.log('🏗️ Menjalankan build Vite dan sinkronisasi Capacitor...');
-    execSync('npm run build', { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
-    execSync('npx cap sync android', { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+    const isPnpm = fs.existsSync(path.resolve(__dirname, '../pnpm-lock.yaml'));
+    const buildCmd = isPnpm ? 'pnpm run build' : 'npm run build';
+    const capSyncCmd = isPnpm ? 'pnpm exec cap sync android' : 'npx cap sync android';
+    execSync(buildCmd, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+    execSync(capSyncCmd, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
 
     // 4. Build APK Release
     console.log('⚙️ Membangun (Build) APK Android...');

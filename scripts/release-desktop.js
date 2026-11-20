@@ -42,7 +42,9 @@ async function runDesktopRelease() {
     // 2. Build Tauri dengan Kunci Signature
     // Catatan: Pastikan rust terinstal
     const privateKey = fs.readFileSync(path.resolve(__dirname, '../src-tauri/tauri.key'), 'utf-8');
-    execSync('npx @tauri-apps/cli build', { 
+    const isPnpm = fs.existsSync(path.resolve(__dirname, '../pnpm-lock.yaml'));
+    const tauriCmd = isPnpm ? 'pnpm dlx @tauri-apps/cli build' : 'npx @tauri-apps/cli build';
+    execSync(tauriCmd, { 
         cwd: path.resolve(__dirname, '..'), 
         stdio: 'inherit',
         env: {

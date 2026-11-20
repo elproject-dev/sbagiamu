@@ -2,7 +2,7 @@
  * Versi aplikasi SBAGIAMU POS
  * Update nilai ini setiap kali rilis versi baru
  */
-export const APP_VERSION = '1.0.44';
+export const APP_VERSION = '1.0.45';
 
 /**
  * Catatan rilis untuk versi ini (Changelog)

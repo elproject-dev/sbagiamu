@@ -65,17 +65,20 @@ async function runRelease() {
     // 4. Build APK Release
     console.log('⚙️ Membangun (Build) APK Android...');
     const gradlewCmd = process.platform === 'win32' ? '.\\gradlew' : './gradlew';
-    const macJbrPath = '/Applications/Android Studio.app/Contents/jbr/Contents/Home';
-    const macSdkPath = `${process.env.HOME}/Library/Android/sdk`;
+    const homeDir = process.env.HOME || '';
+    const possibleJavaHomes = [
+      process.env.JAVA_HOME,
+      `${homeDir}/Library/Java/JavaVirtualMachines/jdk-21.0.13+9/Contents/Home`,
+      '/Applications/Android Studio.app/Contents/jbr/Contents/Home',
+    ].filter(p => p && fs.existsSync(p));
+    const macSdkPath = `${homeDir}/Library/Android/sdk`;
     const buildEnv = { ...process.env };
-    if (!buildEnv.JAVA_HOME && process.platform === 'darwin' && fs.existsSync(macJbrPath)) {
-      buildEnv.JAVA_HOME = macJbrPath;
+    if (possibleJavaHomes.length > 0) {
+      buildEnv.JAVA_HOME = possibleJavaHomes[0];
+      buildEnv.PATH = `${possibleJavaHomes[0]}/bin:${buildEnv.PATH || ''}`;
     }
     if (!buildEnv.ANDROID_HOME && process.platform === 'darwin' && fs.existsSync(macSdkPath)) {
       buildEnv.ANDROID_HOME = macSdkPath;
-    }
-    if (buildEnv.JAVA_HOME) {
-      buildEnv.PATH = `${buildEnv.JAVA_HOME}/bin:${buildEnv.PATH || ''}`;
     }
     execSync(`${gradlewCmd} assembleRelease`, { cwd: path.resolve(__dirname, '../android'), stdio: 'inherit', env: buildEnv });
 

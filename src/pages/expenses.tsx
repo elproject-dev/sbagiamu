@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Search, Edit, Trash2, Wallet, TrendingDown, SlidersHorizontal, Receipt, User, Store, Calendar, FileDown, Loader2, Image as ImageIcon, Camera, X, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Wallet, TrendingDown, SlidersHorizontal, Receipt, User, Store, Calendar, CalendarRange, FileDown, Loader2, Image as ImageIcon, Camera, X, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { applyTenantFilter, withTenantOwner, handleTenantError, isTenantSuperAdmin, getTenantOwnerId } from "@/lib/tenant";
@@ -149,9 +149,22 @@ export default function ExpensesPage() {
   // Download dialog state
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
   const [downloadLoading, setDownloadLoading] = useState(false);
-  const [downloadDateRange, setDownloadDateRange] = useState<"today" | "thisMonth" | "custom">("thisMonth");
   const [downloadStartDate, setDownloadStartDate] = useState("");
   const [downloadEndDate, setDownloadEndDate] = useState("");
+
+  const handleOpenDownloadDialog = () => {
+    if (startDate || endDate) {
+      setDownloadStartDate(startDate);
+      setDownloadEndDate(endDate);
+    } else {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+      const today = now.toISOString().split("T")[0];
+      setDownloadStartDate(firstDay);
+      setDownloadEndDate(today);
+    }
+    setShowDownloadDialog(true);
+  };
 
   // Check if current user is admin
   const isAdmin = useMemo(() => {
@@ -538,9 +551,11 @@ export default function ExpensesPage() {
       setEditingExpense(expense);
       const parsed = parseExpenseDescription(expense.description);
       if (parsed.hasItems) {
+        const legacySummary = parsed.items.map(it => it.name).join(", ");
+        const existingSummary = (parsed.summary && parsed.summary !== legacySummary) ? parsed.summary : "";
         setFormData({
           category: expense.category,
-          description: parsed.summary,
+          description: existingSummary,
           supplier: expense.supplier || "",
           amount: expense.amount.toString(),
           date: expense.date,
@@ -630,7 +645,7 @@ export default function ExpensesPage() {
     if (validItems.length > 0) {
       const itemsSum = validItems.reduce((acc, i) => acc + i.total, 0);
       finalDescription = JSON.stringify({
-        summary: formData.description.trim() || validItems.map(i => i.name).join(", "),
+        summary: formData.description.trim(),
         items: validItems
       });
       if (itemsSum > 0) {
@@ -736,25 +751,36 @@ export default function ExpensesPage() {
     }).format(amount);
   };
 
-  const handleExportExpenses = async (period: 'today' | 'thisMonth') => {
+  const handleExportExpenses = async () => {
     try {
       setDownloadLoading(true);
-
-      let filtered = expenses; // expenses is already filtered by API for outlet/user
-
       const now = new Date();
-      if (period === 'today') {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        filtered = filtered.filter(e => new Date(e.date) >= today);
-      } else if (period === 'thisMonth') {
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        firstDayOfMonth.setHours(0, 0, 0, 0);
-        filtered = filtered.filter(e => new Date(e.date) >= firstDayOfMonth);
+
+      // Query dari database Supabase agar sesuai dengan filter & rentang tanggal download
+      let query = supabase.from("expenses").select("*");
+      query = applyTenantFilter(query);
+
+      if (isAdmin && selectedUserId !== "all") {
+        query = query.eq("owner_id", selectedUserId);
       }
+      if (selectedOutlet !== "all") {
+        query = query.eq("outlet_id", parseInt(selectedOutlet));
+      }
+      if (downloadStartDate) {
+        query = query.gte("date", downloadStartDate);
+      }
+      if (downloadEndDate) {
+        query = query.lte("date", downloadEndDate);
+      }
+      query = query.order("date", { ascending: false });
+
+      const { data: exportedData, error } = await query;
+      if (error) throw error;
+
+      const filtered = exportedData || [];
 
       if (filtered.length === 0) {
-        toast({ title: "Info", description: `Tidak ada pengeluaran untuk periode ini`, variant: "destructive" });
+        toast({ title: "Info", description: "Tidak ada data pengeluaran pada rentang tanggal ini", variant: "destructive" });
         return;
       }
 
@@ -864,7 +890,15 @@ export default function ExpensesPage() {
       const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
       const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 
-      const fileName = `Laporan_Pengeluaran_${period === 'today' ? 'HariIni' : 'BulanIni'}_${now.getTime()}.xlsx`;
+      let dateLabel = "Semua";
+      if (downloadStartDate && downloadEndDate) {
+        dateLabel = downloadStartDate === downloadEndDate ? downloadStartDate : `${downloadStartDate}_sd_${downloadEndDate}`;
+      } else if (downloadStartDate) {
+        dateLabel = `sejak_${downloadStartDate}`;
+      } else if (downloadEndDate) {
+        dateLabel = `hingga_${downloadEndDate}`;
+      }
+      const fileName = `Laporan_Pengeluaran_${dateLabel}_${now.getTime()}.xlsx`;
 
       if (Capacitor.isNativePlatform()) {
         const reader = new FileReader();
@@ -1015,7 +1049,7 @@ export default function ExpensesPage() {
               </h1>
             </div>
             <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto mt-3 sm:mt-0">
-              <Button variant="outline" onClick={() => setShowDownloadDialog(true)} className="w-full sm:w-auto">
+              <Button variant="outline" onClick={handleOpenDownloadDialog} className="w-full sm:w-auto">
                 <FileDown className="w-4 h-4 mr-2" />
                 Download
               </Button>
@@ -1880,98 +1914,157 @@ export default function ExpensesPage() {
 
       {/* Download Excel Dialog for Expenses */}
       <Dialog open={showDownloadDialog} onOpenChange={setShowDownloadDialog}>
-        <DialogContent className="max-w-sm mx-auto">
+        <DialogContent className="max-w-sm sm:max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileDown className="w-5 h-5 text-primary" />
-              Download Laporan
+              Download Laporan Pengeluaran
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Pilih periode untuk download pengeluaran (Excel)
+              Tentukan rentang tanggal untuk unduh file Excel
             </DialogDescription>
           </DialogHeader>
 
-          {isAdmin && (
-            <div className="space-y-2 mt-2">
-              {outlets && outlets.length > 0 && (
-                <Select value={selectedOutlet} onValueChange={setSelectedOutlet}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Semua Outlet" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Outlet</SelectItem>
-                    {outlets.map((outlet: any) => (
-                      <SelectItem key={outlet.id} value={outlet.id.toString()}>
-                        {outlet.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Semua Staff" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Staff</SelectItem>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4 py-2">
+            {/* Date Range Inputs matching Dashboard Home */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                <CalendarRange className="w-3.5 h-3.5 text-primary" />
+                Rentang Tanggal
+              </Label>
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+                <div className="relative w-full h-9">
+                  <Input
+                    type="text"
+                    placeholder="Tanggal Mulai"
+                    value={downloadStartDate ? downloadStartDate.split('-').reverse().join('-') : ""}
+                    readOnly
+                    className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                  />
+                  <input
+                    type="date"
+                    value={downloadStartDate}
+                    onChange={(e: any) => setDownloadStartDate(e.target.value)}
+                    onClick={(e: any) => {
+                      try { e.target.showPicker?.(); } catch (err) { }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    title="Tanggal Mulai"
+                  />
+                </div>
+                <span className="text-slate-400 text-sm hidden sm:block">-</span>
+                <div className="relative w-full h-9">
+                  <Input
+                    type="text"
+                    placeholder="Tanggal Akhir"
+                    value={downloadEndDate ? downloadEndDate.split('-').reverse().join('-') : ""}
+                    readOnly
+                    className="absolute inset-0 h-9 w-full rounded-none text-sm text-center bg-transparent focus:ring-0 cursor-pointer"
+                  />
+                  <input
+                    type="date"
+                    value={downloadEndDate}
+                    onChange={(e: any) => setDownloadEndDate(e.target.value)}
+                    onClick={(e: any) => {
+                      try { e.target.showPicker?.(); } catch (err) { }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    title="Tanggal Akhir"
+                  />
+                </div>
+              </div>
             </div>
-          )}
 
-          <div className="space-y-3 py-4">
-            <button
-              onClick={() => handleExportExpenses('today')}
-              disabled={downloadLoading || isLoading}
-              className="w-full flex items-center gap-4 p-4 rounded-none bg-blue-50 hover:bg-blue-100 transition-colors border-2 border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-left min-w-0">
-                <p className="font-medium text-slate-700">Hari Ini</p>
-                <p className="text-xs text-slate-500 font-normal truncate">
-                  {selectedOutlet === "all" ? "Semua outlet" : `Outlet: ${outlets?.find(o => o.id.toString() === selectedOutlet)?.name || selectedOutlet}`}
-                  {selectedUserId !== "all" && ` | Staff: ${users.find(u => u.id === selectedUserId)?.name || selectedUserId}`}
-                </p>
-              </div>
-            </button>
+            {/* Admin Filter Outlet & Staff */}
+            {isAdmin && (
+              <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <Label className="text-xs font-medium text-slate-500">Filter Tambahan (Admin)</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {outlets && outlets.length > 0 && (
+                    <Select value={selectedOutlet} onValueChange={setSelectedOutlet}>
+                      <SelectTrigger className="h-9 rounded-none text-xs">
+                        <SelectValue placeholder="Semua Outlet" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Outlet</SelectItem>
+                        {outlets.map((outlet: any) => (
+                          <SelectItem key={outlet.id} value={outlet.id.toString()}>
+                            {outlet.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
 
-            <button
-              onClick={() => handleExportExpenses('thisMonth')}
-              disabled={downloadLoading || isLoading}
-              className="w-full flex items-center gap-4 p-4 rounded-none bg-emerald-50 hover:bg-emerald-100 transition-colors border-2 border-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                <Calendar className="w-6 h-6 text-white" />
+                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <SelectTrigger className="h-9 rounded-none text-xs">
+                      <SelectValue placeholder="Semua Staff" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Staff</SelectItem>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="text-left min-w-0">
-                <p className="font-medium text-slate-700">Bulan Ini</p>
-                <p className="text-xs text-slate-500 font-normal truncate">
-                  {selectedOutlet === "all" ? "Semua outlet" : `Outlet: ${outlets?.find(o => o.id.toString() === selectedOutlet)?.name || selectedOutlet}`}
-                  {selectedUserId !== "all" && ` | Staff: ${users.find(u => u.id === selectedUserId)?.name || selectedUserId}`}
-                </p>
-              </div>
-            </button>
+            )}
 
-            <p className="text-xs text-slate-500 text-center pt-2">
-              {expenses.length} pengeluaran ditemukan pada filter saat ini
-            </p>
+            {/* Preview active filter info */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-none border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400 space-y-1">
+              <div className="flex justify-between items-center">
+                <span>Filter Periode:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {downloadStartDate && downloadEndDate
+                    ? downloadStartDate === downloadEndDate
+                      ? downloadStartDate.split('-').reverse().join('-')
+                      : `${downloadStartDate.split('-').reverse().join('-')} s/d ${downloadEndDate.split('-').reverse().join('-')}`
+                    : downloadStartDate
+                    ? `Sejak ${downloadStartDate.split('-').reverse().join('-')}`
+                    : downloadEndDate
+                    ? `Hingga ${downloadEndDate.split('-').reverse().join('-')}`
+                    : "Semua Tanggal"}
+                </span>
+              </div>
+              {isAdmin && (
+                <div className="flex justify-between items-center text-[11px] text-slate-500">
+                  <span>Target:</span>
+                  <span>
+                    {selectedOutlet === "all" ? "Semua Outlet" : outlets?.find(o => o.id.toString() === selectedOutlet)?.name || "Outlet terpilih"}
+                    {selectedUserId !== "all" && ` • ${users.find(u => u.id === selectedUserId)?.name || "Staff terpilih"}`}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
             <Button
               variant="outline"
               onClick={() => setShowDownloadDialog(false)}
-              className="w-full"
+              className="rounded-none w-full sm:w-auto text-xs"
             >
               Batal
+            </Button>
+            <Button
+              onClick={handleExportExpenses}
+              disabled={downloadLoading || isLoading}
+              className="rounded-none w-full sm:flex-1 text-xs font-semibold"
+            >
+              {downloadLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Mengunduh...
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Download File Excel (.xlsx)
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1998,6 +2091,8 @@ export default function ExpensesPage() {
             const parsed = parseExpenseDescription(exp.description);
             const staffName = getStaffNameDisplay(exp.owner_id);
             const outletName = outlets?.find(o => o.id === exp.outlet_id)?.name || "Semua Outlet";
+            const legacySummary = parsed.hasItems ? parsed.items.map(it => it.name).join(", ") : "";
+            const displaySummary = (parsed.summary && parsed.summary !== legacySummary) ? parsed.summary.trim() : "";
 
             return (
               <div className="space-y-3.5 py-1">
@@ -2045,12 +2140,12 @@ export default function ExpensesPage() {
                     )}
                   </div>
 
-                  {parsed.summary && (
+                  {displaySummary ? (
                     <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
                       <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Keterangan / Catatan</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200 mt-0.5 block leading-relaxed">{parsed.summary}</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200 mt-0.5 block leading-relaxed">{displaySummary}</span>
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Tabel Rincian Item Belanja */}

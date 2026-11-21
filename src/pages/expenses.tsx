@@ -2023,10 +2023,10 @@ export default function ExpensesPage() {
                       ? downloadStartDate.split('-').reverse().join('-')
                       : `${downloadStartDate.split('-').reverse().join('-')} s/d ${downloadEndDate.split('-').reverse().join('-')}`
                     : downloadStartDate
-                    ? `Sejak ${downloadStartDate.split('-').reverse().join('-')}`
-                    : downloadEndDate
-                    ? `Hingga ${downloadEndDate.split('-').reverse().join('-')}`
-                    : "Semua Tanggal"}
+                      ? `Sejak ${downloadStartDate.split('-').reverse().join('-')}`
+                      : downloadEndDate
+                        ? `Hingga ${downloadEndDate.split('-').reverse().join('-')}`
+                        : "Semua Tanggal"}
                 </span>
               </div>
               {isAdmin && (
